@@ -1,0 +1,11 @@
+
+#################
+Epilogue Job Info:
+Job ID: 338910.acropolis
+User ID: smohr
+Job Name: matlabpool
+Resource List: nodes=1:ppn=12,mem=10gb,neednodes=1:ppn=12
+Resources Used: cput=00:03:57,vmem=175864300kb,walltime=00:48:56,mem=10485760kb,energy_used=0
+Exit Code: 271
+#################
+
