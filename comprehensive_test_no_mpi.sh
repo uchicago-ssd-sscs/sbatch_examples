@@ -12,7 +12,8 @@
 # Comprehensive Test Script for Multiple Programming Languages
 # Tests: Fortran, MATLAB, Python, R, and Stata
 # Author: Generated for SLURM batch processing
-# Date: $(date)
+# Date: 2025-07-24
+# Author: Eric Hoy
 
 set -euo pipefail  # Exit on error, undefined vars, pipe failures
 

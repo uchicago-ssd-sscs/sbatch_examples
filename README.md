@@ -1,6 +1,137 @@
 # Slurm Job Submission Examples
 
-This directory contains examples of job submission scripts converted from PBS/Torque to Slurm format for use with your new Slurm cluster.
+This directory contains examples of job submission scripts converted from PBS/Torque to Slurm format for use with your new Slurm cluster, including a comprehensive MPI testing suite.
+
+## Open OnDemand
+
+Open OnDemand is a web-based interface that provides easy access to high-performance computing resources through your web browser. It eliminates the need for command-line interaction and provides a user-friendly graphical interface for job submission, file management, and interactive computing.
+
+### Key Features of Open OnDemand:
+- **Web-based Interface**: Access HPC resources from any web browser
+- **Job Submission Tool**: Submit and monitor jobs through a graphical interface
+- **File Manager**: Browse, upload, download, and edit files directly in the browser
+- **Interactive Apps**: Launch interactive applications.  These are in development and will soon include Jupyter notebooks, RStudio, and MATLAB
+- **Job Composer**: Create and manage job scripts with templates
+- **Real-time Monitoring**: View job status, output, and resource usage in real-time
+
+### Accessing Examples in Open OnDemand
+
+The comprehensive testing scripts and job submission examples in this repository are available in two ways:
+
+#### 1. Terminal Access
+All examples are installed in `/share/sbatch_examples` and can be accessed directly from the terminal:
+```bash
+# Navigate to the examples directory
+cd /share/sbatch_examples
+
+# List available examples
+ls -la
+
+# Copy examples to your home directory
+cp comprehensive_test_with_mpi.sh ~/
+cp comprehensive_test_no_mpi.sh ~/
+
+# Submit jobs from terminal
+sbatch comprehensive_test_with_mpi.sh
+```
+
+> The terminal can be available by connecting SSH to a logon node, or by launching the Shell Access tool in the pull-down menu of the Open OnDemand web interface.
+{ .is-info }
+
+#### 2. Open OnDemand Job Submission Tool
+The examples are also available as templates in the Open OnDemand Job Submission interface:
+
+1. **Access Job Submission**: Log into Open OnDemand and click on "Jobs" → "Job Composer"
+2. **Select Template**: Choose from available templates including:
+   - `comprehensive_test_no_mpi.sh` - Serial computing validation
+   - `comprehensive_test_with_mpi.sh` - MPI parallel computing validation
+   - Individual language examples (Fortran, Python, R, MATLAB, etc.)
+3. **Customize Parameters**: Modify SLURM directives, resource requirements, and script parameters
+4. **Submit Job**: Click "Submit" to launch your job through the web interface
+5. **Monitor Progress**: Track job status, view output, and manage results through the dashboard
+
+### Benefits of Using Open OnDemand:
+- **No Command Line Required**: Submit jobs through an intuitive web interface
+- **Template System**: Use pre-configured job templates for common tasks
+- **Visual Job Management**: Monitor jobs with graphical status indicators
+- **Integrated File Management**: Handle input/output files without separate file transfers
+- **Cross-Platform Access**: Work from any device with a web browser
+- **Educational Resources**: Built-in help and documentation for new users
+
+### Getting Started with Open OnDemand:
+1. Open your web browser and navigate to your cluster's Open OnDemand URL
+2. Log in with your cluster credentials
+3. Explore the available applications and tools
+4. Use the Job Composer to submit your first job using the provided templates
+5. Monitor job progress and view results through the web interface
+
+## Comprehensive Testing Suites
+
+### `comprehensive_test_no_mpi.sh`
+A comprehensive testing script that validates serial computing capabilities across multiple programming languages without MPI dependencies.
+
+**Features:**
+- **Serial Testing**: Fortran, MATLAB, Python, R, and Stata
+- **Built-in Functions Only**: Uses only standard libraries and built-in features
+- **Comprehensive Validation**: Tests arithmetic, file I/O, data structures, and mathematical operations
+- **Automatic Detection**: Detects available software and skips unavailable components
+- **Detailed Logging**: Comprehensive test results and error reporting
+
+**SLURM Configuration:**
+```bash
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=4
+#SBATCH --mem=8G
+```
+
+**Usage:**
+```bash
+sbatch comprehensive_test_no_mpi.sh
+```
+
+**Ideal For:**
+- Validating basic software installations
+- Testing serial computational capabilities
+- Environments without MPI support
+- Quick system validation
+
+### `comprehensive_test_with_mpi.sh`
+A comprehensive testing script that validates both serial and parallel computing capabilities across multiple programming languages with extensive MPI support.
+
+**Features:**
+- **Serial Testing**: Fortran, MATLAB, Python, R, and Stata
+- **MPI Parallel Testing**: MPI Fortran, MPI C, MPI Python, MPI R, MPI MATLAB
+- **Performance Benchmarking**: Scalability tests, bandwidth measurements, collective operations
+- **Automatic Detection**: Detects available MPI implementations and libraries
+- **Comprehensive Logging**: Detailed test results and error reporting
+
+**MPI Testing Capabilities:**
+- Point-to-point communication (Send/Receive)
+- Collective communication (Broadcast, Reduce, Gather, Scatter, Allreduce)
+- Non-blocking communication (Isend/Irecv)
+- Array operations and distributed computing
+- Performance and scalability benchmarking
+- Error handling and validation
+
+**SLURM Configuration:**
+```bash
+#SBATCH --nodes=2
+#SBATCH --ntasks-per-node=4
+#SBATCH --cpus-per-task=2
+#SBATCH --mem=8G
+```
+
+**Usage:**
+```bash
+sbatch comprehensive_test_with_mpi.sh
+```
+
+**Dependencies:**
+- MPI implementations: OpenMPI, MPICH, or Intel MPI
+- Language-specific MPI libraries: mpi4py (Python), Rmpi (R)
+- Compilers: mpicc, mpif90
+- Runtime: mpirun
 
 ## Key Differences Between PBS/Torque and Slurm
 
@@ -39,6 +170,25 @@ This directory contains examples of job submission scripts converted from PBS/To
 - **PBS/Torque**: `mpirun -n N -machinefile $PBS_NODEFILE program`
 - **Slurm**: `mpirun -n N -machinefile $SLURM_JOB_NODELIST program`
 
+### Interactive Commands
+
+| PBS/Torque | Slurm | Description |
+|------------|-------|-------------|
+| `qstat` | `squeue` | View job queue and status |
+| `qstat -u username` | `squeue -u username` | View jobs for specific user |
+| `qstat -f jobid` | `scontrol show job jobid` | Show detailed job information |
+| `qdel jobid` | `scancel jobid` | Cancel/delete a job |
+| `qdel -u username` | `scancel -u username` | Cancel all jobs for a user |
+| `qhold jobid` | `scontrol hold jobid` | Hold a job |
+| `qrls jobid` | `scontrol release jobid` | Release a held job |
+| `qrerun jobid` | `scontrol requeue jobid` | Requeue a job |
+| `qsub -I` | `srun --pty bash` | Start interactive session |
+| `qsub -I -l nodes=1:ppn=4` | `srun --pty --nodes=1 --ntasks-per-node=4 bash` | Interactive session with specific resources |
+| `pbsnodes` | `sinfo` | View cluster/node status |
+| `pbsnodes -a` | `sinfo -N` | List all nodes |
+| `qstat -q` | `sinfo -p partition` | View partition/queue information |
+| `qstat -B` | `sinfo -s` | View server status summary |
+
 ## Available Examples
 
 ### Basic Examples
@@ -51,12 +201,35 @@ This directory contains examples of job submission scripts converted from PBS/To
 
 ### Advanced Examples
 - **Spark**: Single-node and multi-node Spark cluster examples
+- **Comprehensive Serial Testing**: `comprehensive_test_no_mpi.sh` - Serial computing validation suite
+- **Comprehensive MPI Testing**: `comprehensive_test_with_mpi.sh` - Full MPI validation suite
+
+### MPI Testing Examples
+- **MPI Fortran**: Point-to-point and collective communication
+- **MPI C**: Comprehensive MPI operations and performance testing
+- **MPI Python**: mpi4py-based parallel computing
+- **MPI R**: Rmpi-based statistical parallel computing
+- **MPI MATLAB**: Parallel Computing Toolbox integration
+- **Performance Testing**: Scalability and bandwidth benchmarks
 
 ## Usage
 
 1. Copy the example scripts to your home directory
 2. Modify the scripts as needed for your specific application
 3. Submit jobs using `sbatch script.sh`
+
+### For Comprehensive Testing:
+```bash
+# Submit serial computing test (no MPI required)
+sbatch comprehensive_test_no_mpi.sh
+
+# Submit comprehensive MPI test
+sbatch comprehensive_test_with_mpi.sh
+
+# Check test results
+cat test_output/comprehensive_test.log
+cat test_output/test_results.txt
+```
 
 ## Notes
 
@@ -65,10 +238,45 @@ This directory contains examples of job submission scripts converted from PBS/To
 - Array jobs use `SLURM_ARRAY_TASK_ID` instead of `PBS_ARRAYID`
 - The `--export=ALL` directive ensures all environment variables are available to the job
 - Output and error files use `%j` placeholder which gets replaced with the job ID
+- Both comprehensive test scripts automatically detect available software and skip unavailable components
+- Comprehensive logging provides detailed test results and performance metrics
+- Choose `comprehensive_test_no_mpi.sh` for basic validation or `comprehensive_test_with_mpi.sh` for full parallel testing
 
-## Additional Slurm Commands
+## Additional Useful Slurm Commands
 
-- `squeue` - View job queue (equivalent to `qstat`)
-- `scancel jobid` - Cancel a job (equivalent to `qdel`)
-- `sinfo` - View cluster status
-- `scontrol show job jobid` - Show detailed job information 
+### Job Management
+- `squeue --start` - Show estimated start times for pending jobs
+- `squeue --format="%.18i %.9P %.20j %.8u %.2t %.10M %.6D %R"` - Custom job queue format
+- `squeue -t RUNNING` - Show only running jobs
+- `squeue -t PENDING` - Show only pending jobs
+- `squeue -t COMPLETED` - Show recently completed jobs
+- `sacct -j jobid` - Show accounting data for a job
+- `sacct -u username --starttime=YYYY-MM-DD` - Show user's job history
+
+### Resource Information
+- `sinfo -l` - Long format cluster status
+- `sinfo -r` - Show only running nodes
+- `sinfo -t idle` - Show only idle nodes
+- `sinfo -t down` - Show only down nodes
+- `scontrol show partition partition_name` - Show partition details
+- `scontrol show node node_name` - Show specific node details
+
+### Interactive Sessions
+- `srun --pty --gres=gpu:1 bash` - Interactive session with GPU
+- `srun --pty --mem=16G bash` - Interactive session with specific memory
+- `srun --pty --time=02:00:00 bash` - Interactive session with time limit
+
+### Job Control
+- `scontrol update job jobid TimeLimit=01:00:00` - Modify job time limit
+- `scontrol update job jobid Partition=partition_name` - Move job to different partition
+- `scontrol requeue jobid` - Requeue a job (useful after system issues)
+- `scontrol hold jobid` - Hold a job (prevent it from starting)
+- `scontrol release jobid` - Release a held job
+
+## Comprehensive Testing Output
+
+Both comprehensive testing scripts generate:
+- **Test Results**: Detailed output from each test in `test_output/test_results.txt`
+- **Error Logs**: Error details in `test_output/error_details.log`
+- **Summary Log**: Overall test summary in `test_output/comprehensive_test.log`
+- **Performance Data**: Timing and scalability metrics (MPI script includes additional parallel performance data) 
