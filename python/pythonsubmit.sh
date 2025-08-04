@@ -18,4 +18,4 @@ module load python/anaconda3
 #mpirun will start 49 instances of helloworld.py
 #$SLURM_JOB_NODELIST tells mpirun which CPU's Slurm reserved for the job
 #helloworld.py will print the jobs rank
-mpirun -n 49 -machinefile $SLURM_JOB_NODELIST python helloworld.py
+srun -n 49 python helloworld.py
