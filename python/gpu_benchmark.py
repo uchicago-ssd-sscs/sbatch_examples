@@ -287,18 +287,18 @@ def main():
     # Get system information
     system_info = get_system_info()
     
-    # Run benchmarks
+    # Run benchmarks with larger matrices for better GPU demonstration
     print("\nRunning matrix operation benchmarks...")
-    matrix_results = benchmark_matrix_operations(size=4096, iterations=5)
+    matrix_results = benchmark_matrix_operations(size=8192, iterations=3)
     
     print("\nRunning memory bandwidth benchmarks...")
-    memory_results = benchmark_memory_bandwidth(size_mb=512, iterations=50)
+    memory_results = benchmark_memory_bandwidth(size_mb=2048, iterations=20)
     
     print("\nRunning compute-intensive benchmarks...")
-    compute_results = benchmark_compute_intensive(size=500000, iterations=500)
+    compute_results = benchmark_compute_intensive(size=2000000, iterations=200)
     
     print("\nRunning PyTorch benchmarks...")
-    torch_results = benchmark_torch_operations(size=2048, iterations=5)
+    torch_results = benchmark_torch_operations(size=4096, iterations=3)
     
     # Print results
     print_results(system_info, matrix_results, memory_results, compute_results, torch_results)
