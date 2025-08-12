@@ -3,8 +3,8 @@
 #SBATCH --output=%j_mpi_test.out
 #SBATCH --error=%j_mpi_test.err
 #SBATCH --export=ALL
-#SBATCH --ntasks=2
-#SBATCH --ntasks-per-node=1
+#SBATCH --ntasks=10
+#SBATCH --ntasks-per-node=2
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=1G
 #SBATCH --time=00:05:00
