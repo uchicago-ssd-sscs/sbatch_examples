@@ -36,11 +36,16 @@ echo "CUDA_VISIBLE_DEVICES: $CUDA_VISIBLE_DEVICES"
 
 # Run the distributed MPI benchmark with proper node distribution
 echo "Creating hostfile for MPI..."
-echo $SLURM_JOB_NODELIST | tr ',' '\n' > hostfile.txt
+# Expand SLURM node list and create proper hostfile
+scontrol show hostnames $SLURM_JOB_NODELIST > hostfile.txt
 echo "Hostfile contents:"
 cat hostfile.txt
 
 echo "Launching MPI benchmark..."
-mpirun -np 2 --hostfile hostfile.txt python gpu_benchmark_mpi_multi_node.py
+echo "Launching $SLURM_NTASKS MPI processes across $SLURM_NNODES nodes..."
+mpirun -np $SLURM_NTASKS --hostfile hostfile.txt python gpu_benchmark_mpi_multi_node.py
 
-echo "Multi-GPU benchmark completed" 
+echo "Multi-GPU benchmark completed"
+
+# Run diagnostic if needed
+bash slurm_diagnostic.sh 

@@ -177,32 +177,42 @@ def benchmark_distributed_matrix_operations(size=8192, iterations=3):
     
     # Root process calculates distributed performance
     if rank == 0:
+        unique_nodes = len(set(all_hostnames))
+        processes_per_node = size_mpi // unique_nodes
+        
         print(f"\nDISTRIBUTED PERFORMANCE ANALYSIS:")
-        print(f"Total nodes: {size_mpi}")
-        print(f"Total GPUs across all nodes: {size_mpi * gpu_count}")
+        print(f"Total nodes: {unique_nodes}")
+        print(f"Processes per node: {processes_per_node}")
+        print(f"Total processes: {size_mpi}")
+        print(f"Total GPUs across all nodes: {unique_nodes * gpu_count}")
         
         # Calculate distributed CPU performance
         avg_cpu_time = np.mean(all_cpu_times)
         total_cpu_gflops = np.sum(all_cpu_gflops)
-        print(f"Average CPU time per node: {avg_cpu_time:.4f} s")
-        print(f"Total CPU GFLOPS across all nodes: {total_cpu_gflops:.2f}")
+        print(f"Average CPU time per process: {avg_cpu_time:.4f} s")
+        print(f"Total CPU GFLOPS across all processes: {total_cpu_gflops:.2f}")
         
         if TORCH_AVAILABLE and TORCH_GPU_AVAILABLE:
             # Calculate distributed GPU performance
             avg_single_gpu_time = np.mean(all_single_gpu_times)
             total_single_gpu_gflops = np.sum(all_single_gpu_gflops)
-            print(f"Average single GPU time per node: {avg_single_gpu_time:.4f} s")
-            print(f"Total single GPU GFLOPS across all nodes: {total_single_gpu_gflops:.2f}")
+            print(f"Average single GPU time per process: {avg_single_gpu_time:.4f} s")
+            print(f"Total single GPU GFLOPS across all processes: {total_single_gpu_gflops:.2f}")
             
             if all_multi_gpu_times:
                 avg_multi_gpu_time = np.mean(all_multi_gpu_times)
                 total_multi_gpu_gflops = np.sum(all_multi_gpu_gflops)
-                print(f"Average multi-GPU time per node: {avg_multi_gpu_time:.4f} s")
-                print(f"Total multi-GPU GFLOPS across all nodes: {total_multi_gpu_gflops:.2f}")
+                print(f"Average multi-GPU time per process: {avg_multi_gpu_time:.4f} s")
+                print(f"Total multi-GPU GFLOPS across all processes: {total_multi_gpu_gflops:.2f}")
                 
                 # Calculate distributed speedup
                 distributed_speedup = avg_cpu_time / avg_multi_gpu_time
                 print(f"Distributed speedup (CPU vs Multi-GPU): {distributed_speedup:.2f}x")
+                
+                # Calculate efficiency
+                if unique_nodes > 1:
+                    efficiency = distributed_speedup / (unique_nodes * gpu_count)
+                    print(f"Distributed efficiency: {efficiency:.2f}x per GPU")
     
     return results
 
@@ -344,7 +354,12 @@ def print_distributed_results(system_info, matrix_results, memory_results):
         
         print(f"\nSYSTEM INFORMATION:")
         print(f"  Total MPI Processes: {system_info['mpi_size']}")
-        print(f"  Nodes: {', '.join(all_hostnames)}")
+        print(f"  Unique Nodes: {len(set(all_hostnames))}")
+        print(f"  Processes per Node: {system_info['mpi_size'] // len(set(all_hostnames))}")
+        print(f"  Node Distribution:")
+        for node in sorted(set(all_hostnames)):
+            count = all_hostnames.count(node)
+            print(f"    {node}: {count} processes")
         print(f"  Platform: {system_info['platform']}")
         print(f"  CPU Count per Node: {system_info['cpu_count']}")
         print(f"  Memory per Node: {system_info['memory_gb']:.1f} GB")
@@ -354,8 +369,12 @@ def print_distributed_results(system_info, matrix_results, memory_results):
             print(f"  GPU Count per Node: {all_gpu_counts}")
             print(f"  Total GPUs across all nodes: {total_gpus}")
             
-            # Show GPU info from each node
-            for node_idx, (hostname, gpu_names) in enumerate(zip(all_hostnames, all_gpu_names)):
+            # Show GPU info from each unique node (avoid duplicates)
+            unique_nodes = list(set(all_hostnames))
+            for node_idx, hostname in enumerate(sorted(unique_nodes)):
+                # Find the first occurrence of this hostname to get its GPU info
+                first_occurrence = all_hostnames.index(hostname)
+                gpu_names = all_gpu_names[first_occurrence]
                 print(f"  Node {node_idx} ({hostname}):")
                 for i, name in enumerate(gpu_names):
                     print(f"    GPU {i}: {name}")
