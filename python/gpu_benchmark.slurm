@@ -21,7 +21,13 @@ cd $SLURM_SUBMIT_DIR
 conda activate gpu
 
 # Install required packages if not already installed (optional)
-conda install -c conda-forge numpy mpi4py cupy-cuda11x torch psutil openmpi
+# conda install numpy mpi4py cupy-cuda11x torch psutil openmpi
+
+# Set environment variables for better GPU utilization
+export OMPI_MCA_opal_cuda_support=true
+export CUDA_VISIBLE_DEVICES=0,1,2,3
+export OMPI_MCA_btl_openib_allow_ib=1
+export OMPI_MCA_btl_openib_if_include="mlx5_0:1"
 
 # Run the GPU benchmark
 echo "Starting GPU benchmark on $(hostname)"

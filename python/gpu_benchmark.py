@@ -295,7 +295,7 @@ def main():
     if rank == 0:
         print("Starting GPU/CPU Benchmark Suite")
         print("This will test matrix operations, memory bandwidth, and compute performance")
-        print("Comparing CPU vs GPU performance for H100 vs L40 comparison")
+        print("Gathering CPU and GPU performance for comparison")
     
     # Get system information
     system_info = get_system_info()
