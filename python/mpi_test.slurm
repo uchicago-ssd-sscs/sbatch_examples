@@ -15,6 +15,7 @@
 cd $SLURM_SUBMIT_DIR
 
 # Activate conda environment
+conda init
 conda activate gpu
 
 # Print SLURM environment
