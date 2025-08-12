@@ -8,7 +8,7 @@
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=1G
 #SBATCH --time=00:05:00
-#SBATCH --partition=cpu
+#SBATCH --partition=CPU
 #SBATCH --nodes=5
 
 # Move into the directory you submitted from
