@@ -8,22 +8,21 @@
 #SBATCH --mem=32G
 #SBATCH --gres=gpu:1
 #SBATCH --time=01:00:00
-#SBATCH --partition=gpu
+#SBATCH --partition=H100
 
 # Move into the directory you submitted from
 cd $SLURM_SUBMIT_DIR
 
 # Load necessary modules (adjust based on your system)
-module load python/anaconda3
-module load cuda/11.8
-module load openmpi/4.1.4
+# module load python/anaconda3
+# module load cuda/11.8
+# module load openmpi/4.1.4
 
-# Create and activate a virtual environment (optional but recommended)
-# python -m venv gpu_benchmark_env
-# source gpu_benchmark_env/bin/activate
+# Activate a virtual environment (optional but recommended)
+coda activate gpu
 
-# Install required packages if not already installed
-# pip install numpy mpi4py cupy-cuda11x torch psutil
+# Install required packages if not already installed (optional)
+conda install -c conda-forge numpy mpi4py cupy-cuda11x torch psutil openmpi
 
 # Run the GPU benchmark
 echo "Starting GPU benchmark on $(hostname)"

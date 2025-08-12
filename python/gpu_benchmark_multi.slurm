@@ -3,21 +3,27 @@
 #SBATCH --output=%j_multi_gpu_benchmark.out
 #SBATCH --error=%j_multi_gpu_benchmark.err
 #SBATCH --export=ALL
-#SBATCH --ntasks=4
+#SBATCH --ntasks=2
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G
-#SBATCH --gres=gpu:4
-#SBATCH --time=02:00:00
-#SBATCH --partition=gpu
-#SBATCH --nodes=1
+#SBATCH --gres=gpu:2
+#SBATCH --time=01:00:00
+#SBATCH --partition=L40S
+#SBATCH --nodes=2
 
 # Move into the directory you submitted from
 cd $SLURM_SUBMIT_DIR
 
 # Load necessary modules (adjust based on your system)
-module load python/anaconda3
-module load cuda/11.8
-module load openmpi/4.1.4
+#module load python/anaconda3
+#module load cuda/11.8
+#module load openmpi/4.1.4
+
+# Activate the virtual environment
+conda activate gpu
+
+# Install required packages if not already installed (optional)
+conda install -c conda-forge numpy mpi4py cupy-cuda11x torch psutil openmpi
 
 # Set environment variables for better GPU utilization
 export CUDA_VISIBLE_DEVICES=0,1,2,3
