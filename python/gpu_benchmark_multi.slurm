@@ -23,17 +23,17 @@ conda init
 conda activate gpu
 
 # Set environment variables for better GPU utilization
-export CUDA_VISIBLE_DEVICES=0,1,2,3
+export CUDA_VISIBLE_DEVICES=0,1
 export PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:512
 
 # Run the GPU benchmark
-echo "Starting Multi-GPU benchmark on $(hostname)"
+echo "Starting Multi-GPU benchmark on multiple nodes"
 echo "$(nvidia-smi)"
 echo "SLURM_JOB_ID: $SLURM_JOB_ID"
 echo "SLURM_NTASKS: $SLURM_NTASKS"
 echo "CUDA_VISIBLE_DEVICES: $CUDA_VISIBLE_DEVICES"
 
-# Run the multi-GPU benchmark
-python gpu_benchmark_multi_gpu.py
+# Run the distributed MPI benchmark
+srun python gpu_benchmark_mpi_multi_node.py
 
 echo "Multi-GPU benchmark completed" 
