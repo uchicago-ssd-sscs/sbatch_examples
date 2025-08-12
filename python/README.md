@@ -98,6 +98,10 @@ sbatch gpu_benchmark_l40.slurm
 
 #### `gpu_benchmark_multi.slurm`
 - **Partition**: L40S
+- **Resources**: 2 nodes, 1 task per node, 64GB memory per node
+- **GPU**: Multiple GPUs across multiple nodes
+- **Network test**: Includes cross-node network bandwidth testing
+- **Use case**: Multi-node distributed GPU performance + network testing
 - **Resources**: 2 tasks, 2 nodes, 8 CPUs per task, 64GB memory
 - **GPU**: Multiple GPUs across multiple nodes
 - **MPI**: Uses `srun --mpi=pmi2` for proper multi-node coordination
@@ -115,7 +119,15 @@ sbatch gpu_benchmark_l40.slurm
 **Purpose**: Verify MPI multi-node communication is working
 - **Simple test**: Basic MPI rank and hostname verification
 - **Communication test**: Message passing between nodes
+- **Network test**: Cross-node network bandwidth measurement
 - **Diagnostic tool**: Helps troubleshoot MPI setup issues
+
+#### `network_bandwidth_test.py`
+**Purpose**: Measure actual network bandwidth between nodes
+- **Point-to-point**: Tests data transfer between specific nodes
+- **Bidirectional**: Measures simultaneous send/receive performance
+- **All-to-all**: Tests collective communication bandwidth
+- **Realistic results**: Should match InfiniBand specifications (~12.5 GB/s for 100 Gbps)
 
 ## 🔧 Environment Setup
 
@@ -159,6 +171,14 @@ openmpi>=4.1.4
   - **CPU**: 10-100 GB/s
   - **L40 GPU**: ~1.2 TB/s
   - **H100 GPU**: ~3-4 TB/s
+
+#### Network Bandwidth
+- **GB/s**: Gigabytes per second (cross-node communication)
+- **Expected ranges**:
+  - **100 Gbps InfiniBand**: ~12.5 GB/s
+  - **200 Gbps InfiniBand**: ~25 GB/s
+  - **400 Gbps InfiniBand**: ~50 GB/s
+  - **Note**: These are actual network limits, not local memory bandwidth
 
 #### Multi-GPU Scaling
 - **Perfect scaling**: 2x speedup with 2 GPUs

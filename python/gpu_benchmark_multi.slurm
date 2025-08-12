@@ -47,5 +47,12 @@ mpirun -np $SLURM_NTASKS --hostfile hostfile.txt python gpu_benchmark_mpi_multi_
 
 echo "Multi-GPU benchmark completed"
 
+echo ""
+echo "=== RUNNING NETWORK BANDWIDTH TEST ==="
+echo "Testing actual cross-node network performance..."
+mpirun -np $SLURM_NTASKS --hostfile hostfile.txt python network_bandwidth_test.py
+
+echo "Network bandwidth test completed"
+
 # Run diagnostic if needed
 bash slurm_diagnostic.sh 
