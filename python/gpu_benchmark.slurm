@@ -21,7 +21,7 @@ cd $SLURM_SUBMIT_DIR
 conda activate gpu
 
 # Install required packages if not already installed (optional)
-# conda install -c conda-forge numpy mpi4py cupy pytorch psutil openmpi
+# conda install -c conda-forge numpy mpi4py pytorch psutil openmpi
 # pip install cupy-cuda12x
 
 # Set environment variables for better GPU utilization
