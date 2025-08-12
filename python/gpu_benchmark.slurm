@@ -32,11 +32,11 @@ export OMPI_MCA_btl_openib_if_include="mlx5_0:1"
 
 # Run the GPU benchmark
 echo "Starting GPU benchmark on $(hostname)"
+echo "$(nvidia-smi)"
 echo "SLURM_JOB_ID: $SLURM_JOB_ID"
 echo "SLURM_GPUS: $SLURM_GPUS"
 echo "CUDA_VISIBLE_DEVICES: $CUDA_VISIBLE_DEVICES"
 
 # Run the benchmark
 python gpu_benchmark.py
-
 echo "GPU benchmark completed" 

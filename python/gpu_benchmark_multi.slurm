@@ -39,6 +39,6 @@ echo "SLURM_GPUS: $SLURM_GPUS"
 echo "CUDA_VISIBLE_DEVICES: $CUDA_VISIBLE_DEVICES"
 
 # Run the benchmark with MPI
-srun python gpu_benchmark.py
+srun python gpu_benchmark_mpi.py
 
 echo "Multi-GPU benchmark completed" 

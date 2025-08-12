@@ -7,12 +7,32 @@ import sys
 import platform
 import psutil
 
+# Try to import MPI
+try:
+    from mpi4py import MPI
+    MPI_AVAILABLE = True
+except ImportError:
+    MPI_AVAILABLE = False
+    print("MPI not available - running single-process benchmarks")
+    # Create a mock MPI-like object for single-process execution
+    class MockMPI:
+        class COMM_WORLD:
+            @staticmethod
+            def Get_rank():
+                return 0
+            @staticmethod
+            def Get_size():
+                return 1
+            @staticmethod
+            def Barrier():
+                pass
+    MPI = MockMPI()
+
 # Try to import GPU libraries
 try:
     import cupy as cp
     import cupyx
     GPU_AVAILABLE = True
-    print("CuPy available - running GPU benchmarks")
 except ImportError:
     GPU_AVAILABLE = False
     print("CuPy not available - running CPU-only benchmarks")
@@ -22,14 +42,11 @@ try:
     TORCH_AVAILABLE = True
     if torch.cuda.is_available():
         TORCH_GPU_AVAILABLE = True
-        print("PyTorch GPU available")
     else:
         TORCH_GPU_AVAILABLE = False
-        print("PyTorch available but no GPU detected")
 except ImportError:
     TORCH_AVAILABLE = False
     TORCH_GPU_AVAILABLE = False
-    print("PyTorch not available")
 
 def get_system_info():
     """Get detailed system information"""
@@ -40,6 +57,8 @@ def get_system_info():
         'python_version': sys.version,
         'cpu_count': psutil.cpu_count(),
         'memory_gb': psutil.virtual_memory().total / (1024**3),
+        'mpi_rank': MPI.COMM_WORLD.Get_rank(),
+        'mpi_size': MPI.COMM_WORLD.Get_size()
     }
     
     if GPU_AVAILABLE:
@@ -47,9 +66,7 @@ def get_system_info():
             info['gpu_count'] = cp.cuda.runtime.getDeviceCount()
             info['gpu_name'] = cp.cuda.runtime.getDeviceProperties(0)['name'].decode()
             info['gpu_memory_gb'] = cp.cuda.runtime.memGetInfo()[1] / (1024**3)
-            print(f"Detected {info['gpu_count']} GPU(s): {info['gpu_name']}")
-        except Exception as e:
-            print(f"Error getting GPU info: {e}")
+        except:
             info['gpu_count'] = 0
             info['gpu_name'] = 'Unknown'
             info['gpu_memory_gb'] = 0
@@ -57,7 +74,6 @@ def get_system_info():
     if TORCH_AVAILABLE and TORCH_GPU_AVAILABLE:
         info['torch_gpu_name'] = torch.cuda.get_device_name(0)
         info['torch_gpu_memory_gb'] = torch.cuda.get_device_properties(0).total_memory / (1024**3)
-        print(f"PyTorch GPU: {info['torch_gpu_name']}")
     
     return info
 
@@ -240,8 +256,10 @@ def benchmark_torch_operations(size=2048, iterations=10):
 
 def print_results(system_info, matrix_results, memory_results, compute_results, torch_results):
     """Print formatted results"""
+    rank = system_info['mpi_rank']
+    
     print(f"\n{'='*80}")
-    print(f"GPU/CPU BENCHMARK RESULTS")
+    print(f"BENCHMARK RESULTS - Rank {rank}")
     print(f"{'='*80}")
     
     print(f"\nSYSTEM INFORMATION:")
@@ -249,8 +267,9 @@ def print_results(system_info, matrix_results, memory_results, compute_results, 
     print(f"  Platform: {system_info['platform']}")
     print(f"  CPU Count: {system_info['cpu_count']}")
     print(f"  Memory: {system_info['memory_gb']:.1f} GB")
+    print(f"  MPI Rank: {system_info['mpi_rank']}/{system_info['mpi_size']}")
     
-    if GPU_AVAILABLE and system_info.get('gpu_count', 0) > 0:
+    if GPU_AVAILABLE:
         print(f"  GPU: {system_info['gpu_name']}")
         print(f"  GPU Memory: {system_info['gpu_memory_gb']:.1f} GB")
     
@@ -290,31 +309,48 @@ def print_results(system_info, matrix_results, memory_results, compute_results, 
 
 def main():
     """Main benchmark function"""
-    print("Starting GPU/CPU Benchmark Suite")
-    print("This will test matrix operations, memory bandwidth, and compute performance")
-    print("Comparing CPU vs GPU performance")
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+    
+    if rank == 0:
+        print("Starting GPU/CPU Benchmark Suite")
+        print("This will test matrix operations, memory bandwidth, and compute performance")
+        if MPI_AVAILABLE:
+            print(f"Running with MPI - {comm.Get_size()} processes")
+        else:
+            print("Running in single-process mode")
+        print("Gathering CPU and GPU performance for comparison")
     
     # Get system information
     system_info = get_system_info()
     
     # Run benchmarks
-    print("\nRunning matrix operation benchmarks...")
+    if rank == 0:
+        print("\nRunning matrix operation benchmarks...")
     matrix_results = benchmark_matrix_operations(size=4096, iterations=5)
     
-    print("\nRunning memory bandwidth benchmarks...")
+    if rank == 0:
+        print("\nRunning memory bandwidth benchmarks...")
     memory_results = benchmark_memory_bandwidth(size_mb=512, iterations=50)
     
-    print("\nRunning compute-intensive benchmarks...")
+    if rank == 0:
+        print("\nRunning compute-intensive benchmarks...")
     compute_results = benchmark_compute_intensive(size=500000, iterations=500)
     
-    print("\nRunning PyTorch benchmarks...")
+    if rank == 0:
+        print("\nRunning PyTorch benchmarks...")
     torch_results = benchmark_torch_operations(size=2048, iterations=5)
     
     # Print results
     print_results(system_info, matrix_results, memory_results, compute_results, torch_results)
     
-    print("\nBenchmark completed successfully!")
-    print("Use these results to compare CPU vs GPU performance")
+    # Synchronize all processes (only if MPI is available)
+    if MPI_AVAILABLE:
+        comm.Barrier()
+    
+    if rank == 0:
+        print("\nBenchmark completed successfully!")
+        print("Use these results for your performance comparisons")
 
 if __name__ == "__main__":
-    main()
+    main() 
