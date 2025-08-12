@@ -25,23 +25,23 @@ echo "SLURM_NTASKS_PER_NODE: $SLURM_NTASKS_PER_NODE"
 echo "SLURM_NODELIST: $SLURM_NODELIST"
 echo "SLURM_JOB_NODELIST: $SLURM_JOB_NODELIST"
 
-# Configure MPI to use InfiniBand bond0 interface
-echo "=== CONFIGURING MPI FOR INFINIBAND ==="
+# Configure MPI to use 100 Gbps bond1 interface
+echo "=== CONFIGURING MPI FOR 100 GBPS (bond1) ==="
 
 # Method 1: OpenMPI BTL configuration
-export OMPI_MCA_btl_openib_if_include="bond0"
+export OMPI_MCA_btl_openib_if_include="bond1"
 export OMPI_MCA_btl="^openib"  # Disable other BTLs
 export OMPI_MCA_btl_openib_allow_ib=1
 export OMPI_MCA_btl_openib_verbose=1
 
 # Method 2: UCX configuration (alternative)
-export UCX_NET_DEVICES="bond0"
+export UCX_NET_DEVICES="bond1"
 export UCX_TLS="rc,ud"
 export UCX_VERBOSE=1
 
 # Method 3: Force specific network interface
-export OMPI_MCA_oob_tcp_if_include="bond0"
-export OMPI_MCA_btl_tcp_if_include="bond0"
+export OMPI_MCA_oob_tcp_if_include="bond1"
+export OMPI_MCA_btl_tcp_if_include="bond1"
 
 # Method 4: Disable shared memory for cross-node communication
 export OMPI_MCA_btl_sm="^sm"  # Disable shared memory BTL
@@ -49,10 +49,13 @@ export OMPI_MCA_btl_sm="^sm"  # Disable shared memory BTL
 # Print network interface information
 echo "=== NETWORK INTERFACE INFORMATION ==="
 echo "Available interfaces:"
-ip link show | grep -E "(bond0|ib|eth|eno)"
+ip link show | grep -E "(bond0|bond1|ib|eth|eno)"
 
-echo "Bond0 interface details:"
+echo "Bond0 interface details (1 Gbps):"
 ip addr show bond0 2>/dev/null || echo "bond0 not found"
+
+echo "Bond1 interface details (100 Gbps):"
+ip addr show bond1 2>/dev/null || echo "bond1 not found"
 
 echo "InfiniBand interfaces:"
 ip link show | grep ib || echo "No InfiniBand interfaces found"
@@ -80,8 +83,8 @@ mpirun -np $SLURM_NTASKS --hostfile hostfile.txt python mpi_test.py
 echo "MPI test completed"
 
 echo ""
-echo "=== RUNNING NETWORK BANDWIDTH TEST WITH IB CONFIG ==="
-echo "Testing actual cross-node network performance with InfiniBand..."
+echo "=== RUNNING NETWORK BANDWIDTH TEST WITH 100 GBPS CONFIG ==="
+echo "Testing actual cross-node network performance with 100 Gbps interface..."
 mpirun -np $SLURM_NTASKS --hostfile hostfile.txt python network_bandwidth_test_v2.py
 
 echo "Network bandwidth test completed"

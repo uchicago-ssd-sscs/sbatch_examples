@@ -23,13 +23,13 @@ cd $SLURM_SUBMIT_DIR
 conda init
 conda activate gpu
 
-# Configure MPI to use InfiniBand bond0 interface
-echo "=== CONFIGURING MPI FOR INFINIBAND ==="
-export OMPI_MCA_btl_openib_if_include="bond0"
+# Configure MPI to use 100 Gbps bond1 interface
+echo "=== CONFIGURING MPI FOR 100 GBPS (bond1) ==="
+export OMPI_MCA_btl_openib_if_include="bond1"
 export OMPI_MCA_btl="^openib"
 export OMPI_MCA_btl_openib_allow_ib=1
 export OMPI_MCA_btl_sm="^sm"  # Disable shared memory for cross-node
-export UCX_NET_DEVICES="bond0"
+export UCX_NET_DEVICES="bond1"
 export UCX_TLS="rc,ud"
 
 echo "MPI Configuration:"

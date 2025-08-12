@@ -218,12 +218,13 @@ def main():
     
     if rank == 0:
         print("\n=== IMPROVED NETWORK BANDWIDTH TEST COMPLETED ===")
-        print("Expected bandwidth for 100 Gbps InfiniBand: ~12.5 GB/s")
+        print("Expected bandwidth for 100 Gbps interface: ~10-12 GB/s")
         print("If results are significantly lower, check:")
-        print("1. InfiniBand driver installation")
+        print("1. MPI is using bond1 (100 Gbps) not bond0 (1 Gbps)")
         print("2. MPI configuration (OpenMPI/UCX)")
         print("3. Network interface selection")
         print("4. System resource limits")
+        print("5. Switch configuration and cable quality")
 
 if __name__ == "__main__":
     main()
