@@ -18,28 +18,23 @@ cd $SLURM_SUBMIT_DIR
 #module load cuda/11.8
 #module load openmpi/4.1.4
 
-# Activate the virtual environment
+# Activate conda environment
 conda init
 conda activate gpu
 
-# Install required packages if not already installed (optional)
-# conda install -c conda-forge numpy mpi4py pytorch psutil openmpi
-# pip install cupy-cuda12x
-
 # Set environment variables for better GPU utilization
-export OMPI_MCA_opal_cuda_support=true
 export CUDA_VISIBLE_DEVICES=0,1,2,3
-export OMPI_MCA_btl_openib_allow_ib=1
-export OMPI_MCA_btl_openib_if_include="mlx5_0:1"
+export PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:512
 
-# Run the GPU benchmark with MPI
+# Run the GPU benchmark
 echo "Starting Multi-GPU benchmark on $(hostname)"
+echo "$(nvidia-smi)"
 echo "SLURM_JOB_ID: $SLURM_JOB_ID"
 echo "SLURM_NTASKS: $SLURM_NTASKS"
 echo "SLURM_GPUS: $SLURM_GPUS"
 echo "CUDA_VISIBLE_DEVICES: $CUDA_VISIBLE_DEVICES"
 
-# Run the benchmark with MPI
-srun python gpu_benchmark_mpi.py
+# Run the multi-GPU benchmark
+python gpu_benchmark_multi_gpu.py
 
 echo "Multi-GPU benchmark completed" 
