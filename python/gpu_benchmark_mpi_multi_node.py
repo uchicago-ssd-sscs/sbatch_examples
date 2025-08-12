@@ -6,6 +6,7 @@ import os
 import sys
 import platform
 import psutil
+import socket
 
 # Try to import MPI
 try:
@@ -174,6 +175,9 @@ def benchmark_distributed_matrix_operations(size=8192, iterations=3):
     
     # Synchronize all processes
     comm.Barrier()
+    
+    # Gather hostnames from all processes
+    all_hostnames = comm.gather(socket.gethostname(), root=0)
     
     # Root process calculates distributed performance
     if rank == 0:
