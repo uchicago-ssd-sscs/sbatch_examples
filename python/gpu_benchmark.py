@@ -4,9 +4,29 @@ import numpy as np
 import time
 import os
 import sys
-from mpi4py import MPI
 import platform
 import psutil
+
+# Try to import MPI
+try:
+    from mpi4py import MPI
+    MPI_AVAILABLE = True
+except ImportError:
+    MPI_AVAILABLE = False
+    print("MPI not available - running single-process benchmarks")
+    # Create a mock MPI-like object for single-process execution
+    class MockMPI:
+        class COMM_WORLD:
+            @staticmethod
+            def Get_rank():
+                return 0
+            @staticmethod
+            def Get_size():
+                return 1
+            @staticmethod
+            def Barrier():
+                pass
+    MPI = MockMPI()
 
 # Try to import GPU libraries
 try:
@@ -295,6 +315,10 @@ def main():
     if rank == 0:
         print("Starting GPU/CPU Benchmark Suite")
         print("This will test matrix operations, memory bandwidth, and compute performance")
+        if MPI_AVAILABLE:
+            print(f"Running with MPI - {comm.Get_size()} processes")
+        else:
+            print("Running in single-process mode")
         print("Gathering CPU and GPU performance for comparison")
     
     # Get system information
@@ -320,8 +344,9 @@ def main():
     # Print results
     print_results(system_info, matrix_results, memory_results, compute_results, torch_results)
     
-    # Synchronize all processes
-    comm.Barrier()
+    # Synchronize all processes (only if MPI is available)
+    if MPI_AVAILABLE:
+        comm.Barrier()
     
     if rank == 0:
         print("\nBenchmark completed successfully!")

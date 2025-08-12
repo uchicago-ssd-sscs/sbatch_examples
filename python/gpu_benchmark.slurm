@@ -21,7 +21,7 @@ cd $SLURM_SUBMIT_DIR
 conda activate gpu
 
 # Install required packages if not already installed (optional)
-# conda install numpy mpi4py cupy-cuda11x torch psutil openmpi
+# conda install -c conda-forge numpy mpi4py cupy pytorch psutil openmpi
 
 # Set environment variables for better GPU utilization
 export OMPI_MCA_opal_cuda_support=true
