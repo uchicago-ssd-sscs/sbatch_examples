@@ -23,6 +23,20 @@ cd $SLURM_SUBMIT_DIR
 conda init
 conda activate gpu
 
+# Configure MPI to use InfiniBand bond0 interface
+echo "=== CONFIGURING MPI FOR INFINIBAND ==="
+export OMPI_MCA_btl_openib_if_include="bond0"
+export OMPI_MCA_btl="^openib"
+export OMPI_MCA_btl_openib_allow_ib=1
+export OMPI_MCA_btl_sm="^sm"  # Disable shared memory for cross-node
+export UCX_NET_DEVICES="bond0"
+export UCX_TLS="rc,ud"
+
+echo "MPI Configuration:"
+echo "OMPI_MCA_btl_openib_if_include: $OMPI_MCA_btl_openib_if_include"
+echo "OMPI_MCA_btl: $OMPI_MCA_btl"
+echo "UCX_NET_DEVICES: $UCX_NET_DEVICES"
+
 # Set environment variables for better GPU utilization
 export CUDA_VISIBLE_DEVICES=0,1
 export PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:512
@@ -50,7 +64,7 @@ echo "Multi-GPU benchmark completed"
 echo ""
 echo "=== RUNNING NETWORK BANDWIDTH TEST ==="
 echo "Testing actual cross-node network performance..."
-mpirun -np $SLURM_NTASKS --hostfile hostfile.txt python network_bandwidth_test.py
+mpirun -np $SLURM_NTASKS --hostfile hostfile.txt python network_bandwidth_test_v2.py
 
 echo "Network bandwidth test completed"
 

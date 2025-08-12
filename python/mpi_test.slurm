@@ -45,7 +45,7 @@ echo "MPI test completed"
 echo ""
 echo "=== RUNNING NETWORK BANDWIDTH TEST ==="
 echo "Testing actual cross-node network performance..."
-mpirun -np 50 --hostfile hostfile.txt python network_bandwidth_test.py
+mpirun -np 50 --hostfile hostfile.txt python network_bandwidth_test_v2.py
 
 echo "Network bandwidth test completed"
 
