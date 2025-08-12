@@ -9,6 +9,7 @@
 #SBATCH --time=01:00:00
 #SBATCH --partition=L40S
 #SBATCH --nodes=2
+#SBATCH --ntasks-per-node=1
 
 # Move into the directory you submitted from
 cd $SLURM_SUBMIT_DIR
@@ -33,7 +34,7 @@ echo "SLURM_JOB_ID: $SLURM_JOB_ID"
 echo "SLURM_NTASKS: $SLURM_NTASKS"
 echo "CUDA_VISIBLE_DEVICES: $CUDA_VISIBLE_DEVICES"
 
-# Run the distributed MPI benchmark
-srun python gpu_benchmark_mpi_multi_node.py
+# Run the distributed MPI benchmark with proper node distribution
+srun --mpi=pmi2 python gpu_benchmark_mpi_multi_node.py
 
 echo "Multi-GPU benchmark completed" 

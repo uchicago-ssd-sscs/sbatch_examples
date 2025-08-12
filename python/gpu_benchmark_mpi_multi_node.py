@@ -332,6 +332,11 @@ def print_distributed_results(system_info, matrix_results, memory_results):
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
     
+    # Gather system information from all nodes
+    all_hostnames = comm.gather(system_info['hostname'], root=0)
+    all_gpu_counts = comm.gather(system_info.get('gpu_count', 0), root=0)
+    all_gpu_names = comm.gather(system_info.get('gpu_names', []), root=0)
+    
     if rank == 0:
         print(f"\n{'='*80}")
         print(f"DISTRIBUTED MPI BENCHMARK RESULTS")
@@ -339,16 +344,21 @@ def print_distributed_results(system_info, matrix_results, memory_results):
         
         print(f"\nSYSTEM INFORMATION:")
         print(f"  Total MPI Processes: {system_info['mpi_size']}")
-        print(f"  Hostname: {system_info['hostname']}")
+        print(f"  Nodes: {', '.join(all_hostnames)}")
         print(f"  Platform: {system_info['platform']}")
-        print(f"  CPU Count: {system_info['cpu_count']}")
-        print(f"  Memory: {system_info['memory_gb']:.1f} GB")
+        print(f"  CPU Count per Node: {system_info['cpu_count']}")
+        print(f"  Memory per Node: {system_info['memory_gb']:.1f} GB")
         
         if TORCH_AVAILABLE and TORCH_GPU_AVAILABLE:
-            print(f"  GPU Count per Node: {system_info['gpu_count']}")
-            print(f"  Total GPUs across all nodes: {system_info['mpi_size'] * system_info['gpu_count']}")
-            for i, (name, memory) in enumerate(zip(system_info['gpu_names'], system_info['gpu_memories'])):
-                print(f"  GPU {i}: {name} ({memory:.1f} GB)")
+            total_gpus = sum(all_gpu_counts)
+            print(f"  GPU Count per Node: {all_gpu_counts}")
+            print(f"  Total GPUs across all nodes: {total_gpus}")
+            
+            # Show GPU info from each node
+            for node_idx, (hostname, gpu_names) in enumerate(zip(all_hostnames, all_gpu_names)):
+                print(f"  Node {node_idx} ({hostname}):")
+                for i, name in enumerate(gpu_names):
+                    print(f"    GPU {i}: {name}")
         
         print(f"\n{'='*80}")
 
@@ -358,10 +368,15 @@ def main():
     rank = comm.Get_rank()
     size = comm.Get_size()
     
+    # Print MPI setup information
+    print(f"Rank {rank}/{size} on {platform.node()}")
+    
     if rank == 0:
         print("Starting Distributed MPI Benchmark Suite")
         print(f"This will test matrix operations and memory bandwidth across {size} nodes")
         print("Using MPI to coordinate work across multiple servers")
+        print(f"MPI World Size: {size}")
+        print(f"MPI Rank: {rank}")
     
     # Get system information
     system_info = get_system_info()
