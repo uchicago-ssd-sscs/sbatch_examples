@@ -18,6 +18,7 @@ cd $SLURM_SUBMIT_DIR
 # module load openmpi/4.1.4
 
 # Activate a virtual environment (optional but recommended)
+conda init
 conda activate gpu
 
 # Install required packages if not already installed (optional)
