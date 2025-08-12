@@ -31,7 +31,6 @@ echo "Starting Multi-GPU benchmark on $(hostname)"
 echo "$(nvidia-smi)"
 echo "SLURM_JOB_ID: $SLURM_JOB_ID"
 echo "SLURM_NTASKS: $SLURM_NTASKS"
-echo "SLURM_GPUS: $SLURM_GPUS"
 echo "CUDA_VISIBLE_DEVICES: $CUDA_VISIBLE_DEVICES"
 
 # Run the multi-GPU benchmark
