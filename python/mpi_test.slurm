@@ -3,13 +3,13 @@
 #SBATCH --output=%j_mpi_test.out
 #SBATCH --error=%j_mpi_test.err
 #SBATCH --export=ALL
-#SBATCH --ntasks=2
-#SBATCH --ntasks-per-node=1
+#SBATCH --ntasks=50
+#SBATCH --ntasks-per-node=10
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=1G
 #SBATCH --time=00:05:00
 #SBATCH --partition=CPU
-#SBATCH --nodes=2
+#SBATCH --nodes=5
 
 # Move into the directory you submitted from
 cd $SLURM_SUBMIT_DIR
@@ -37,7 +37,8 @@ cat hostfile.txt
 
 # Test MPI with proper hostfile
 echo "Testing MPI with expanded hostfile..."
-mpirun -np 2 --hostfile hostfile.txt python mpi_test.py
+echo "Launching 50 MPI processes across 5 nodes..."
+mpirun -np 50 --hostfile hostfile.txt python mpi_test.py
 
 echo "MPI test completed"
 

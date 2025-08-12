@@ -32,16 +32,20 @@ def main():
     if rank == 0:
         print(f"\nMPI Test Results:")
         print(f"Total processes: {size}")
-        print(f"Hostnames: {all_hostnames}")
         print(f"Unique nodes: {len(set(all_hostnames))}")
+        print(f"Processes per node: {size // len(set(all_hostnames))}")
+        print(f"Node distribution:")
+        for node in sorted(set(all_hostnames)):
+            count = all_hostnames.count(node)
+            print(f"  {node}: {count} processes")
         
         if len(set(all_hostnames)) > 1:
             print("✅ SUCCESS: MPI is spanning multiple nodes!")
         else:
             print("❌ FAILURE: MPI is only running on one node")
     
-    # Test simple communication
-    if size > 1:
+    # Test simple communication (only show first few ranks)
+    if size > 1 and rank < 5:  # Only show first 5 ranks
         if rank == 0:
             # Send message to rank 1
             message = f"Hello from rank 0 on {hostname}"
@@ -51,6 +55,8 @@ def main():
             # Receive message from rank 0
             message = comm.recv(source=0, tag=123)
             print(f"Rank 1: Received message: {message}")
+        else:
+            print(f"Rank {rank}: Participating in MPI communication")
     
     comm.Barrier()
     
