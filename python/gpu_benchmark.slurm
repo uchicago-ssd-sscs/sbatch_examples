@@ -22,6 +22,7 @@ conda activate gpu
 
 # Install required packages if not already installed (optional)
 # conda install -c conda-forge numpy mpi4py cupy pytorch psutil openmpi
+# pip install cupy-cuda12x
 
 # Set environment variables for better GPU utilization
 export OMPI_MCA_opal_cuda_support=true
