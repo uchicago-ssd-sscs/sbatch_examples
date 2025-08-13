@@ -45,9 +45,6 @@ export UCX_TCP_MAX_RETRIES=10
 export UCX_VERBOSE=1
 
 # Method 3: Disable shared memory for cross-node communication
-export OMPI_MCA_btl_sm="^sm"
-
-# Method 4: Disable shared memory for cross-node communication
 export OMPI_MCA_btl_sm="^sm"  # Disable shared memory BTL
 
 # Print network interface information
@@ -77,8 +74,8 @@ scontrol show hostnames $SLURM_JOB_NODELIST > hostfile.txt
 echo "Hostfile contents:"
 cat hostfile.txt
 
-# Test MPI with InfiniBand configuration
-echo "Testing MPI with InfiniBand configuration..."
+# Test MPI with 100 Gbps Ethernet configuration
+echo "Testing MPI with 100 Gbps Ethernet configuration..."
 echo "Launching $SLURM_NTASKS MPI processes across $SLURM_NNODES nodes..."
 mpirun -np $SLURM_NTASKS --hostfile hostfile.txt python mpi_test.py
 
