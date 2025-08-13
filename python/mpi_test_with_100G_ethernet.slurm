@@ -32,27 +32,19 @@ echo "SLURM_JOB_NODELIST: $SLURM_JOB_NODELIST"
 # Configure MPI to use 100 Gbps Ethernet bond1 interface
 echo "=== CONFIGURING MPI FOR 100 GBPS ETHERNET (bond1) ==="
 
-# Method 1: OpenMPI TCP/UCX configuration for Ethernet
-export OMPI_MCA_btl="^openib"  # Disable InfiniBand BTLs
-# Prefer UCX PML over legacy OB1
-export OMPI_MCA_pml=ucx
-# Force TCP to use the 10.150.0.0/16 subnet explicitly
-export OMPI_MCA_btl_tcp_if_include="10.150.0.0/16"
-export OMPI_MCA_oob_tcp_if_include="10.150.0.0/16"
-# Optionally exclude slower subnets
-export OMPI_MCA_btl_tcp_if_exclude="127.0.0.1/8,172.16.0.0/12,192.168.0.0/16"
+# Method 1: OpenMPI TCP configuration for Ethernet (no UCX)
+export OMPI_MCA_btl=self,tcp        # use only loopback and TCP BTLs
+export OMPI_MCA_pml=ob1             # default pml without UCX
+# Force TCP to use the 100G bond1 interface explicitly
+export OMPI_MCA_btl_tcp_if_include="bond1"
+export OMPI_MCA_oob_tcp_if_include="bond1"
 export OMPI_MCA_btl_tcp_eager_limit=65536
 export OMPI_MCA_btl_tcp_rndv_eager_limit=65536
 export OMPI_MCA_btl_tcp_rcvbuf=2097152
 export OMPI_MCA_btl_tcp_sndbuf=2097152
 
-# Method 2: UCX configuration for Ethernet
-export UCX_NET_DEVICES="bond1"
-export UCX_TLS="tcp"
-export UCX_SOCKADDR_TLS_PRIORITY="tcp"
-export UCX_TCP_CM_REUSEADDR=y
-export UCX_TCP_MAX_RETRIES=10
-export UCX_VERBOSE=1
+# Method 2: (UCX not available in this OpenMPI build) — do not configure UCX
+unset UCX_NET_DEVICES UCX_TLS UCX_SOCKADDR_TLS_PRIORITY UCX_TCP_CM_REUSEADDR UCX_TCP_MAX_RETRIES UCX_VERBOSE
 
 # Method 3: Disable shared memory for cross-node communication
 export OMPI_MCA_btl_sm="^sm"  # Disable shared memory BTL
@@ -81,8 +73,7 @@ echo "=== MPI CONFIGURATION ==="
 echo "OMPI_MCA_btl: $OMPI_MCA_btl"
 echo "OMPI_MCA_btl_tcp_if_include: ${OMPI_MCA_btl_tcp_if_include}"
 echo "OMPI_MCA_oob_tcp_if_include: ${OMPI_MCA_oob_tcp_if_include}"
-echo "UCX_NET_DEVICES: $UCX_NET_DEVICES"
-echo "UCX_TLS: $UCX_TLS"
+echo "OMPI_MCA_pml: $OMPI_MCA_pml"
 echo "UCX_SOCKADDR_CM_SOURCE_ADDRESS: ${UCX_SOCKADDR_CM_SOURCE_ADDRESS}"
 
 # Test MPI
@@ -94,23 +85,20 @@ scontrol show hostnames $SLURM_JOB_NODELIST > hostfile.txt
 echo "Hostfile contents:"
 cat hostfile.txt
 
-echo "Route to peer (debug):"
-PEER_HOST=$(sed -n '2p' hostfile.txt)
-PEER_IP=$(getent hosts "$PEER_HOST" | awk '{print $1}')
-echo "Peer host: $PEER_HOST, resolves to: $PEER_IP"
-ip route get "$PEER_IP" | cat
+# Note: hostnames are for placement; data path is constrained by *if_include=bond1*
 
 # Test MPI with 100 Gbps Ethernet configuration
 echo "Testing MPI with 100 Gbps Ethernet configuration..."
 echo "Launching $SLURM_NTASKS MPI processes across $SLURM_NNODES nodes..."
 mpirun -np $SLURM_NTASKS --hostfile hostfile.txt \
-  --mca pml ucx \
-  --mca oob_tcp_if_include 10.150.0.0/16 \
-  --mca btl_tcp_if_include 10.150.0.0/16 \
-  --mca btl_tcp_if_exclude 127.0.0.1/8,172.16.0.0/12,192.168.0.0/16 \
+  --mca pml ob1 \
+  --mca btl self,tcp \
+  --mca oob_tcp_if_include bond1 \
+  --mca btl_tcp_if_include bond1 \
+  --mca btl_base_verbose 100 \
+  --mca oob_base_verbose 100 \
   -x OMPI_MCA_btl -x OMPI_MCA_pml \
-  -x OMPI_MCA_btl_tcp_if_include -x OMPI_MCA_oob_tcp_if_include -x OMPI_MCA_btl_tcp_if_exclude \
-  -x UCX_NET_DEVICES -x UCX_TLS -x UCX_SOCKADDR_TLS_PRIORITY -x UCX_SOCKADDR_CM_SOURCE_ADDRESS -x UCX_TCP_CM_REUSEADDR -x UCX_TCP_MAX_RETRIES -x UCX_VERBOSE \
+  -x OMPI_MCA_btl_tcp_if_include -x OMPI_MCA_oob_tcp_if_include \
   python mpi_test.py
 
 echo "MPI test completed"
@@ -119,13 +107,14 @@ echo ""
 echo "=== RUNNING NETWORK BANDWIDTH TEST WITH 100 GBPS ETHERNET ==="
 echo "Testing actual cross-node network performance with 100 Gbps Ethernet..."
 mpirun -np $SLURM_NTASKS --hostfile hostfile.txt \
-  --mca pml ucx \
-  --mca oob_tcp_if_include 10.150.0.0/16 \
-  --mca btl_tcp_if_include 10.150.0.0/16 \
-  --mca btl_tcp_if_exclude 127.0.0.1/8,172.16.0.0/12,192.168.0.0/16 \
+  --mca pml ob1 \
+  --mca btl self,tcp \
+  --mca oob_tcp_if_include bond1 \
+  --mca btl_tcp_if_include bond1 \
+  --mca btl_base_verbose 100 \
+  --mca oob_base_verbose 100 \
   -x OMPI_MCA_btl -x OMPI_MCA_pml \
-  -x OMPI_MCA_btl_tcp_if_include -x OMPI_MCA_oob_tcp_if_include -x OMPI_MCA_btl_tcp_if_exclude \
-  -x UCX_NET_DEVICES -x UCX_TLS -x UCX_SOCKADDR_TLS_PRIORITY -x UCX_SOCKADDR_CM_SOURCE_ADDRESS -x UCX_TCP_CM_REUSEADDR -x UCX_TCP_MAX_RETRIES -x UCX_VERBOSE \
+  -x OMPI_MCA_btl_tcp_if_include -x OMPI_MCA_oob_tcp_if_include \
   python network_bandwidth_test_v2.py
 
 echo "Network bandwidth test completed"
