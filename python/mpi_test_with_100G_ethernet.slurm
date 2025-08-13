@@ -38,6 +38,8 @@ export OMPI_MCA_pml=ob1             # default pml without UCX
 # Force TCP to use the 100G bond1 interface explicitly
 export OMPI_MCA_btl_tcp_if_include="bond1"
 export OMPI_MCA_oob_tcp_if_include="bond1"
+export OMPI_MCA_btl_tcp_sndbuf=67108864
+export OMPI_MCA_btl_tcp_rcvbuf=67108864
 export OMPI_MCA_btl_tcp_eager_limit=65536
 export OMPI_MCA_btl_tcp_rndv_eager_limit=65536
 export OMPI_MCA_btl_tcp_rcvbuf=2097152
@@ -73,6 +75,16 @@ echo "=== MPI CONFIGURATION ==="
 echo "OMPI_MCA_btl: $OMPI_MCA_btl"
 echo "OMPI_MCA_btl_tcp_if_include: ${OMPI_MCA_btl_tcp_if_include}"
 echo "OMPI_MCA_oob_tcp_if_include: ${OMPI_MCA_oob_tcp_if_include}"
+echo "OMPI_MCA_btl_tcp_sndbuf: ${OMPI_MCA_btl_tcp_sndbuf}"
+echo "OMPI_MCA_btl_tcp_rcvbuf: ${OMPI_MCA_btl_tcp_rcvbuf}"
+
+echo "=== Kernel TCP buffer limits (diagnostic) ==="
+sysctl -n net.core.rmem_max 2>/dev/null | sed 's/^/net.core.rmem_max=/' || echo "net.core.rmem_max: unknown"
+sysctl -n net.core.wmem_max 2>/dev/null | sed 's/^/net.core.wmem_max=/' || echo "net.core.wmem_max: unknown"
+sysctl -n net.ipv4.tcp_rmem 2>/dev/null | sed 's/^/net.ipv4.tcp_rmem=/' || echo "net.ipv4.tcp_rmem: unknown"
+sysctl -n net.ipv4.tcp_wmem 2>/dev/null | sed 's/^/net.ipv4.tcp_wmem=/' || echo "net.ipv4.tcp_wmem: unknown"
+sysctl -n net.ipv4.tcp_congestion_control 2>/dev/null | sed 's/^/net.ipv4.tcp_congestion_control=/' || echo "net.ipv4.tcp_congestion_control: unknown"
+sysctl -n net.ipv4.tcp_window_scaling 2>/dev/null | sed 's/^/net.ipv4.tcp_window_scaling=/' || echo "net.ipv4.tcp_window_scaling: unknown"
 echo "OMPI_MCA_pml: $OMPI_MCA_pml"
 echo "UCX_SOCKADDR_CM_SOURCE_ADDRESS: ${UCX_SOCKADDR_CM_SOURCE_ADDRESS}"
 
@@ -86,6 +98,24 @@ echo "Hostfile contents:"
 cat hostfile.txt
 
 # Note: hostnames are for placement; data path is constrained by *if_include=bond1*
+echo "=== Link details per node (bond1) ==="
+srun -N $SLURM_NNODES -n $SLURM_NNODES bash -lc 'echo -n "$(hostname) "; ethtool bond1 2>/dev/null | grep -E "Speed|Duplex|Link detected" || echo "no ethtool"; cat /proc/net/bonding/bond1 2>/dev/null | sed -n "1,30p" || true'
+
+echo "Collecting bond1 IPv4s for direct tests..."
+srun -N $SLURM_NNODES -n $SLURM_NNODES bash -lc "ip -4 -o addr show dev bond1 | awk '{print \\$4}' | cut -d/ -f1" | sort -u > bond1_ips.txt
+cat bond1_ips.txt
+
+H0=$(sed -n '1p' hostfile.txt)
+H1=$(sed -n '2p' hostfile.txt)
+IP0=$(sed -n '1p' bond1_ips.txt)
+IP1=$(sed -n '2p' bond1_ips.txt)
+echo "Node0 $H0 bond1 IP: $IP0"
+echo "Node1 $H1 bond1 IP: $IP1"
+
+echo "Testing 10.150 reachability from $H0 to $IP1 (standard MTU)"
+srun -N1 -w $H0 bash -lc "ping -c 3 $IP1 | cat"
+echo "Testing 10.150 reachability from $H0 to $IP1 (jumbo MTU 8972)"
+srun -N1 -w $H0 bash -lc "ping -c 3 -M do -s 8972 $IP1 | cat || echo 'Jumbo ping failed'"
 
 # Test MPI with 100 Gbps Ethernet configuration
 echo "Testing MPI with 100 Gbps Ethernet configuration..."
@@ -95,6 +125,8 @@ mpirun -np $SLURM_NTASKS --hostfile hostfile.txt \
   --mca btl self,tcp \
   --mca oob_tcp_if_include bond1 \
   --mca btl_tcp_if_include bond1 \
+  --mca btl_tcp_sndbuf 67108864 \
+  --mca btl_tcp_rcvbuf 67108864 \
   --mca btl_base_verbose 100 \
   --mca oob_base_verbose 100 \
   -x OMPI_MCA_btl -x OMPI_MCA_pml \
@@ -111,6 +143,8 @@ mpirun -np $SLURM_NTASKS --hostfile hostfile.txt \
   --mca btl self,tcp \
   --mca oob_tcp_if_include bond1 \
   --mca btl_tcp_if_include bond1 \
+  --mca btl_tcp_sndbuf 67108864 \
+  --mca btl_tcp_rcvbuf 67108864 \
   --mca btl_base_verbose 100 \
   --mca oob_base_verbose 100 \
   -x OMPI_MCA_btl -x OMPI_MCA_pml \
