@@ -14,9 +14,13 @@
 # Move into the directory you submitted from
 cd $SLURM_SUBMIT_DIR
 
-# Activate conda environment
-conda init
-conda activate gpu
+# Activate conda environment from existing installation in home directory (non-interactive safe)
+if [ -f "$HOME/miniconda3/etc/profile.d/conda.sh" ]; then
+    source "$HOME/miniconda3/etc/profile.d/conda.sh"
+    conda activate gpu || echo "Warning: could not activate conda env 'gpu'"
+else
+    echo "Warning: conda.sh not found; skipping conda activation"
+fi
 
 # Print SLURM environment
 echo "SLURM_JOB_ID: $SLURM_JOB_ID"

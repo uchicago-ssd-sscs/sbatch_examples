@@ -1,6 +1,6 @@
 # Weather Data Collection for SLURM Cluster
 
-This project collects weather data from the NOAA Weather.gov API for the 20 most-populated US cities using a distributed SLURM cluster approach. Each node processes one city, allowing for efficient parallel data collection.
+This example demonstrates the collection of a small sample of data from NOAA Weather.gov API for the 20 most-populated US cities using a distributed SLURM cluster approach. Each node processes one city to verify and document that data collection via https is functional.
 
 ## Features
 
@@ -38,7 +38,7 @@ The system processes the 20 most-populated US cities:
 ## Prerequisites
 
 1. **SLURM Cluster**: Access to a SLURM cluster with CPU partition
-2. **Python Environment**: Python 3.x with required packages
+2. **Python Environment**: Use a conda environment
 3. **Internet Access**: Cluster nodes need access to api.weather.gov
 
 ## Setup
@@ -137,25 +137,25 @@ Modify the `get_weather_data()` function in `weather.py` to:
    ```
    Error fetching weather data: Connection timeout
    ```
-   Solution: Check cluster network connectivity to api.weather.gov
+   Solution: Internet connectivity might be a problem!  Report the issue to ssc_server_support@listhost.uchicago.edu
 
 2. **API Rate Limits**
    ```
    Error fetching weather data: 429 Too Many Requests
    ```
-   Solution: Weather.gov has rate limits. Consider adding delays between requests.
+   Solution: Weather.gov has rate limits. You should not encounter those rate limits unless you have altered the scripts dramatically.
 
 3. **No Forecast Data**
    ```
    No forecast periods found for [City Name]
    ```
-   Solution: Some locations may not have current forecast data available.
+   Solution: Don't replace the city names provided with cities that are not on the map.
 
 4. **Insufficient Nodes**
    ```
-   Not enough cities (20) for 25 nodes
+   Not enough nodes available for the job.  It sits in the queue forever.
    ```
-   Solution: Reduce the number of nodes in the SLURM script or add more cities.
+   Solution: Adjust the number of cities and the number of nodes so that it will run with available resources.
 
 ### Debug Mode
 
@@ -174,4 +174,4 @@ logging.basicConfig(level=logging.DEBUG, ...)
 
 ## License
 
-This project is part of the sbatch_examples repository. See the main LICENSE file for details.
+This project is part of the sbatch_examples repository of the Social Sciences Computing Services team at the University of Chicago.

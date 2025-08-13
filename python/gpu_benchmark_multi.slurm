@@ -19,9 +19,13 @@ cd $SLURM_SUBMIT_DIR
 #module load cuda/11.8
 #module load openmpi/4.1.4
 
-# Activate conda environment
-conda init
-conda activate gpu
+# Activate conda environment from existing installation in home directory (non-interactive safe)
+if [ -f "$HOME/miniconda3/etc/profile.d/conda.sh" ]; then
+    source "$HOME/miniconda3/etc/profile.d/conda.sh"
+    conda activate gpu || echo "Warning: could not activate conda env 'gpu'"
+else
+    echo "Warning: conda.sh not found; skipping conda activation"
+fi
 
 # Configure MPI to use 100 Gbps Ethernet bond1 interface
 echo "=== CONFIGURING MPI FOR 100 GBPS ETHERNET (bond1) ==="

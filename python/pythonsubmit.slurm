@@ -10,7 +10,11 @@
 cd $SLURM_SUBMIT_DIR
 
 #Load Python Anaconda 
-module load python/anaconda3
+#module load python/anaconda3
+
+# Activate conda from existing installation in home directory
+conda init
+conda activate gpu
 
 #You may load a virtual environment 
 #source activate myenvironment

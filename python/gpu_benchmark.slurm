@@ -17,9 +17,13 @@ cd $SLURM_SUBMIT_DIR
 # module load cuda/11.8
 # module load openmpi/4.1.4
 
-# Activate a virtual environment (optional but recommended)
-conda init
-conda activate gpu
+# Activate conda environment from existing installation in home directory (non-interactive safe)
+if [ -f "$HOME/miniconda3/etc/profile.d/conda.sh" ]; then
+    source "$HOME/miniconda3/etc/profile.d/conda.sh"
+    conda activate gpu || echo "Warning: could not activate conda env 'gpu'"
+else
+    echo "Warning: conda.sh not found; skipping conda activation"
+fi
 
 # Install required packages if not already installed (optional)
 # conda install -c conda-forge numpy mpi4py pytorch psutil openmpi

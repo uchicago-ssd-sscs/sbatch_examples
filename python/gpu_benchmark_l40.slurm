@@ -16,8 +16,13 @@ cd $SLURM_SUBMIT_DIR
 # module load python/anaconda3
 # module load cuda/11.8
 
-# Activate conda environment
-conda activate gpu
+# Activate conda environment from existing installation in home directory (non-interactive safe)
+if [ -f "$HOME/miniconda3/etc/profile.d/conda.sh" ]; then
+    source "$HOME/miniconda3/etc/profile.d/conda.sh"
+    conda activate gpu || echo "Warning: could not activate conda env 'gpu'"
+else
+    echo "Warning: conda.sh not found; skipping conda activation"
+fi
 
 # Set environment variables for better GPU utilization
 export CUDA_VISIBLE_DEVICES=0
