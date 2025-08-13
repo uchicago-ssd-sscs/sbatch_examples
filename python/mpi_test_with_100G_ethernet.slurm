@@ -62,6 +62,15 @@ echo "=== NETWORK INTERFACE INFORMATION ==="
 echo "Available interfaces:"
 ip -4 addr show bond1 || true
 
+# Detect local bond1 IPv4 and bind UCX sockets to it
+BOND1_IP=$(ip -4 -o addr show dev bond1 | awk '{print $4}' | cut -d/ -f1 | head -n1)
+if [ -n "$BOND1_IP" ]; then
+  export UCX_SOCKADDR_CM_SOURCE_ADDRESS="$BOND1_IP"
+  echo "Local bond1 IPv4: $BOND1_IP"
+else
+  echo "Warning: could not detect bond1 IPv4"
+fi
+
 echo "Bond1 interface details (100 Gbps):"
 ip addr show bond1 2>/dev/null || echo "bond1 not found"
 
@@ -70,33 +79,38 @@ ip link show | grep ib || echo "No InfiniBand interfaces found"
 
 echo "=== MPI CONFIGURATION ==="
 echo "OMPI_MCA_btl: $OMPI_MCA_btl"
-echo "OMPI_MCA_btl_tcp_if_include: $OMPI_MCA_btl_tcp_if_include"
-echo "OMPI_MCA_oob_tcp_if_include: $OMPI_MCA_oob_tcp_if_include"
+echo "OMPI_MCA_btl_tcp_if_include: ${OMPI_MCA_btl_tcp_if_include}"
+echo "OMPI_MCA_oob_tcp_if_include: ${OMPI_MCA_oob_tcp_if_include}"
 echo "UCX_NET_DEVICES: $UCX_NET_DEVICES"
 echo "UCX_TLS: $UCX_TLS"
+echo "UCX_SOCKADDR_CM_SOURCE_ADDRESS: ${UCX_SOCKADDR_CM_SOURCE_ADDRESS}"
 
 # Test MPI
 echo "Testing MPI multi-node communication with 100 Gbps Ethernet configuration..."
 
-# Create hostfile with bond1 IPs for mpirun
-echo "Creating hostfile with bond1 IPs..."
-# Query each allocated node for its bond1 IPv4 address
-srun -N $SLURM_NNODES -n $SLURM_NNODES bash -c "ip -4 -o addr show dev bond1 | awk '{print \$4}' | cut -d/ -f1" \
-  | sort -u > hostfile.txt
-echo "Hostfile contents (bond1 IPs):"
+# Create hostfile using allocated hostnames (compatible with PRTE/SLURM)
+echo "Creating hostfile (hostnames from SLURM allocation)..."
+scontrol show hostnames $SLURM_JOB_NODELIST > hostfile.txt
+echo "Hostfile contents:"
 cat hostfile.txt
 
-echo "Route to first peer (debug):"
-PEER_IP=$(head -n1 hostfile.txt)
+echo "Route to peer (debug):"
+PEER_HOST=$(sed -n '2p' hostfile.txt)
+PEER_IP=$(getent hosts "$PEER_HOST" | awk '{print $1}')
+echo "Peer host: $PEER_HOST, resolves to: $PEER_IP"
 ip route get "$PEER_IP" | cat
 
 # Test MPI with 100 Gbps Ethernet configuration
 echo "Testing MPI with 100 Gbps Ethernet configuration..."
 echo "Launching $SLURM_NTASKS MPI processes across $SLURM_NNODES nodes..."
 mpirun -np $SLURM_NTASKS --hostfile hostfile.txt \
+  --mca pml ucx \
+  --mca oob_tcp_if_include 10.150.0.0/16 \
+  --mca btl_tcp_if_include 10.150.0.0/16 \
+  --mca btl_tcp_if_exclude 127.0.0.1/8,172.16.0.0/12,192.168.0.0/16 \
   -x OMPI_MCA_btl -x OMPI_MCA_pml \
   -x OMPI_MCA_btl_tcp_if_include -x OMPI_MCA_oob_tcp_if_include -x OMPI_MCA_btl_tcp_if_exclude \
-  -x UCX_NET_DEVICES -x UCX_TLS -x UCX_SOCKADDR_TLS_PRIORITY -x UCX_TCP_CM_REUSEADDR -x UCX_TCP_MAX_RETRIES -x UCX_VERBOSE \
+  -x UCX_NET_DEVICES -x UCX_TLS -x UCX_SOCKADDR_TLS_PRIORITY -x UCX_SOCKADDR_CM_SOURCE_ADDRESS -x UCX_TCP_CM_REUSEADDR -x UCX_TCP_MAX_RETRIES -x UCX_VERBOSE \
   python mpi_test.py
 
 echo "MPI test completed"
@@ -105,9 +119,13 @@ echo ""
 echo "=== RUNNING NETWORK BANDWIDTH TEST WITH 100 GBPS ETHERNET ==="
 echo "Testing actual cross-node network performance with 100 Gbps Ethernet..."
 mpirun -np $SLURM_NTASKS --hostfile hostfile.txt \
+  --mca pml ucx \
+  --mca oob_tcp_if_include 10.150.0.0/16 \
+  --mca btl_tcp_if_include 10.150.0.0/16 \
+  --mca btl_tcp_if_exclude 127.0.0.1/8,172.16.0.0/12,192.168.0.0/16 \
   -x OMPI_MCA_btl -x OMPI_MCA_pml \
   -x OMPI_MCA_btl_tcp_if_include -x OMPI_MCA_oob_tcp_if_include -x OMPI_MCA_btl_tcp_if_exclude \
-  -x UCX_NET_DEVICES -x UCX_TLS -x UCX_SOCKADDR_TLS_PRIORITY -x UCX_TCP_CM_REUSEADDR -x UCX_TCP_MAX_RETRIES -x UCX_VERBOSE \
+  -x UCX_NET_DEVICES -x UCX_TLS -x UCX_SOCKADDR_TLS_PRIORITY -x UCX_SOCKADDR_CM_SOURCE_ADDRESS -x UCX_TCP_CM_REUSEADDR -x UCX_TCP_MAX_RETRIES -x UCX_VERBOSE \
   python network_bandwidth_test_v2.py
 
 echo "Network bandwidth test completed"
