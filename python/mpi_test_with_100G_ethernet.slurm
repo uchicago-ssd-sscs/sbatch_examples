@@ -103,7 +103,7 @@ echo "=== Link details per node (bond1) ==="
 srun -N $SLURM_NNODES -n $SLURM_NNODES bash -lc 'echo -n "$(hostname) "; ethtool bond1 2>/dev/null | grep -E "Speed|Duplex|Link detected" || echo "no ethtool"; cat /proc/net/bonding/bond1 2>/dev/null | sed -n "1,30p" || true'
 
 echo "Collecting bond1 IPv4s for direct tests..."
-srun -N $SLURM_NNODES -n $SLURM_NNODES bash -lc 'ip -4 -o addr show dev bond1 | awk '{print $4}' | cut -d/ -f1' | sort -u > bond1_ips.txt
+srun -N $SLURM_NNODES -n $SLURM_NNODES bash -lc "ip -4 -o addr show dev bond1 | tr -s ' ' | cut -d' ' -f4 | cut -d/ -f1" | sort -u > bond1_ips.txt
 cat bond1_ips.txt || true
 
 H0=$(sed -n '1p' hostfile.txt)
