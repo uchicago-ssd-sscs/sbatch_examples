@@ -8,7 +8,7 @@
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=1G
 #SBATCH --time=00:05:00
-#SBATCH --partition=L40S
+#SBATCH --partition=CPU
 #SBATCH --nodes=2
 
 # Move into the directory you submitted from
@@ -53,10 +53,7 @@ export OMPI_MCA_btl_sm="^sm"  # Disable shared memory BTL
 # Print network interface information
 echo "=== NETWORK INTERFACE INFORMATION ==="
 echo "Available interfaces:"
-ip link show | grep -E "(bond0|bond1|ib|eth|eno)"
-
-echo "Bond0 interface details (1 Gbps):"
-ip addr show bond0 2>/dev/null || echo "bond0 not found"
+ip link show | grep -E "(bond1|ib)"
 
 echo "Bond1 interface details (100 Gbps):"
 ip addr show bond1 2>/dev/null || echo "bond1 not found"
