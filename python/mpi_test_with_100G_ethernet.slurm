@@ -40,6 +40,7 @@ export OMPI_MCA_btl_tcp_if_include="bond1"
 export OMPI_MCA_oob_tcp_if_include="bond1"
 export OMPI_MCA_btl_tcp_sndbuf=67108864
 export OMPI_MCA_btl_tcp_rcvbuf=67108864
+export PRTE_MCA_oob_tcp_if_include="10.150.0.0/16"
 export OMPI_MCA_btl_tcp_eager_limit=65536
 export OMPI_MCA_btl_tcp_rndv_eager_limit=65536
 export OMPI_MCA_btl_tcp_rcvbuf=2097152
@@ -102,8 +103,8 @@ echo "=== Link details per node (bond1) ==="
 srun -N $SLURM_NNODES -n $SLURM_NNODES bash -lc 'echo -n "$(hostname) "; ethtool bond1 2>/dev/null | grep -E "Speed|Duplex|Link detected" || echo "no ethtool"; cat /proc/net/bonding/bond1 2>/dev/null | sed -n "1,30p" || true'
 
 echo "Collecting bond1 IPv4s for direct tests..."
-srun -N $SLURM_NNODES -n $SLURM_NNODES bash -lc "ip -4 -o addr show dev bond1 | awk '{print \\$4}' | cut -d/ -f1" | sort -u > bond1_ips.txt
-cat bond1_ips.txt
+srun -N $SLURM_NNODES -n $SLURM_NNODES bash -lc 'ip -4 -o addr show dev bond1 | awk '{print $4}' | cut -d/ -f1' | sort -u > bond1_ips.txt
+cat bond1_ips.txt || true
 
 H0=$(sed -n '1p' hostfile.txt)
 H1=$(sed -n '2p' hostfile.txt)
@@ -112,15 +113,20 @@ IP1=$(sed -n '2p' bond1_ips.txt)
 echo "Node0 $H0 bond1 IP: $IP0"
 echo "Node1 $H1 bond1 IP: $IP1"
 
-echo "Testing 10.150 reachability from $H0 to $IP1 (standard MTU)"
-srun -N1 -w $H0 bash -lc "ping -c 3 $IP1 | cat"
-echo "Testing 10.150 reachability from $H0 to $IP1 (jumbo MTU 8972)"
-srun -N1 -w $H0 bash -lc "ping -c 3 -M do -s 8972 $IP1 | cat || echo 'Jumbo ping failed'"
+if [ -n "$IP0" ] && [ -n "$IP1" ]; then
+  echo "Testing 10.150 reachability from $H0 to $IP1 (standard MTU)"
+  srun -N1 -w $H0 bash -lc "ping -c 3 $IP1 | cat"
+  echo "Testing 10.150 reachability from $H0 to $IP1 (jumbo MTU 8972)"
+  srun -N1 -w $H0 bash -lc "ping -c 3 -M do -s 8972 $IP1 | cat || echo 'Jumbo ping failed'"
+else
+  echo "Could not determine bond1 IPs; skipping ping tests"
+fi
 
 # Test MPI with 100 Gbps Ethernet configuration
 echo "Testing MPI with 100 Gbps Ethernet configuration..."
 echo "Launching $SLURM_NTASKS MPI processes across $SLURM_NNODES nodes..."
 mpirun -np $SLURM_NTASKS --hostfile hostfile.txt \
+  --prtemca oob_tcp_if_include 10.150.0.0/16 \
   --mca pml ob1 \
   --mca btl self,tcp \
   --mca oob_tcp_if_include bond1 \
@@ -139,6 +145,7 @@ echo ""
 echo "=== RUNNING NETWORK BANDWIDTH TEST WITH 100 GBPS ETHERNET ==="
 echo "Testing actual cross-node network performance with 100 Gbps Ethernet..."
 mpirun -np $SLURM_NTASKS --hostfile hostfile.txt \
+  --prtemca oob_tcp_if_include 10.150.0.0/16 \
   --mca pml ob1 \
   --mca btl self,tcp \
   --mca oob_tcp_if_include bond1 \
