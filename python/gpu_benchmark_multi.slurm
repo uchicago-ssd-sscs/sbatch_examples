@@ -23,19 +23,27 @@ cd $SLURM_SUBMIT_DIR
 conda init
 conda activate gpu
 
-# Configure MPI to use 100 Gbps bond1 interface
-echo "=== CONFIGURING MPI FOR 100 GBPS (bond1) ==="
-export OMPI_MCA_btl_openib_if_include="bond1"
-export OMPI_MCA_btl="^openib"
-export OMPI_MCA_btl_openib_allow_ib=1
+# Configure MPI to use 100 Gbps Ethernet bond1 interface
+echo "=== CONFIGURING MPI FOR 100 GBPS ETHERNET (bond1) ==="
+export OMPI_MCA_btl="^openib"  # Disable InfiniBand BTLs
+export OMPI_MCA_btl_tcp_if_include="bond1"  # Use bond1 for TCP
+export OMPI_MCA_oob_tcp_if_include="bond1"  # Use bond1 for out-of-band
+export OMPI_MCA_btl_tcp_eager_limit=65536
+export OMPI_MCA_btl_tcp_rndv_eager_limit=65536
+export OMPI_MCA_btl_tcp_rcvbuf=2097152
+export OMPI_MCA_btl_tcp_sndbuf=2097152
 export OMPI_MCA_btl_sm="^sm"  # Disable shared memory for cross-node
 export UCX_NET_DEVICES="bond1"
-export UCX_TLS="rc,ud"
+export UCX_TLS="tcp"
+export UCX_TCP_CM_REUSEADDR=y
+export UCX_TCP_MAX_RETRIES=10
 
 echo "MPI Configuration:"
-echo "OMPI_MCA_btl_openib_if_include: $OMPI_MCA_btl_openib_if_include"
 echo "OMPI_MCA_btl: $OMPI_MCA_btl"
+echo "OMPI_MCA_btl_tcp_if_include: $OMPI_MCA_btl_tcp_if_include"
+echo "OMPI_MCA_oob_tcp_if_include: $OMPI_MCA_oob_tcp_if_include"
 echo "UCX_NET_DEVICES: $UCX_NET_DEVICES"
+echo "UCX_TLS: $UCX_TLS"
 
 # Set environment variables for better GPU utilization
 export CUDA_VISIBLE_DEVICES=0,1

@@ -140,16 +140,22 @@ def suggest_mpi_config():
         print("export UCX_TLS=\"rc,ud\"")
         
     elif has_bond1:
-        print("✅ bond1 (100 Gbps) interface detected!")
-        print("This should be used for MPI communication.")
+        print("✅ bond1 (100 Gbps Ethernet) interface detected!")
+        print("This should be used for MPI communication over Ethernet.")
         print("Suggested OpenMPI configuration:")
-        print("export OMPI_MCA_btl_openib_if_include=\"bond1\"")
-        print("export OMPI_MCA_btl=\"^openib\"")
-        print("export OMPI_MCA_btl_openib_allow_ib=1")
+        print("export OMPI_MCA_btl=\"^openib\"  # Disable InfiniBand BTLs")
+        print("export OMPI_MCA_btl_tcp_if_include=\"bond1\"  # Use bond1 for TCP")
+        print("export OMPI_MCA_oob_tcp_if_include=\"bond1\"  # Use bond1 for out-of-band")
+        print("export OMPI_MCA_btl_tcp_eager_limit=65536")
+        print("export OMPI_MCA_btl_tcp_rndv_eager_limit=65536")
+        print("export OMPI_MCA_btl_tcp_rcvbuf=2097152")
+        print("export OMPI_MCA_btl_tcp_sndbuf=2097152")
         print()
         print("Alternative UCX configuration:")
         print("export UCX_NET_DEVICES=\"bond1\"")
-        print("export UCX_TLS=\"rc,ud\"")
+        print("export UCX_TLS=\"tcp\"")
+        print("export UCX_TCP_CM_REUSEADDR=y")
+        print("export UCX_TCP_MAX_RETRIES=10")
         
     elif has_bond0:
         print("⚠️  bond0 (1 Gbps) found but no high-speed interfaces detected")
