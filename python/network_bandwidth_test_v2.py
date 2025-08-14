@@ -14,8 +14,8 @@ except ImportError:
     print("MPI not available")
     exit(1)
 
-def test_network_bandwidth_improved(comm, rank, size, data_size_mb=4096, iterations=10):
-    """Improved network bandwidth test with better methodology"""
+def test_network_bandwidth(comm, rank, size, data_size_mb=4096, iterations=10):
+    """Network bandwidth test with better methodology"""
     
     if size < 2:
         return
@@ -184,16 +184,14 @@ def main():
     
     hostname = platform.node()
     
-    if rank == 0:
-        print("=== IMPROVED NETWORK BANDWIDTH TEST ===")
-        print(f"MPI Size: {size}")
-        print(f"Testing between nodes: {hostname}")
-    
     # Gather all hostnames
     all_hostnames = comm.gather(hostname, root=0)
     
     if rank == 0:
+        print("=== NETWORK BANDWIDTH TEST ===")
+        print(f"MPI Size: {size}")
         unique_nodes = len(set(all_hostnames))
+        print(f"Testing between nodes: {', '.join(sorted(set(all_hostnames)))}")
         print(f"Unique nodes: {unique_nodes}")
         print(f"Processes per node: {size // unique_nodes}")
         
