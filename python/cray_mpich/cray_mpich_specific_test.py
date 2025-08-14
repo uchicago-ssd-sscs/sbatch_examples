@@ -1,0 +1,250 @@
+#!/usr/bin/env python3
+
+import numpy as np
+import time
+import platform
+import os
+import sys
+import subprocess
+
+try:
+    from mpi4py import MPI
+    MPI_AVAILABLE = True
+except ImportError:
+    MPI_AVAILABLE = False
+    print("MPI not available")
+    sys.exit(1)
+
+def check_mpi_environment():
+    """Check which MPI implementation we're using"""
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+    
+    if rank == 0:
+        print("=== MPI Implementation Check ===")
+        
+        # Check MPI library version
+        mpi_lib = MPI.Get_library_version()
+        print(f"MPI Library: {mpi_lib}")
+        
+        # Check for different MPI implementations
+        mpi_lib_lower = mpi_lib.lower()
+        if 'cray' in mpi_lib_lower:
+            print("✅ Cray MPICH detected!")
+        elif 'hpe' in mpi_lib_lower or 'mpt' in mpi_lib_lower:
+            print("✅ HPE MPT detected!")
+        elif 'mpich' in mpi_lib_lower:
+            print("✅ MPICH detected!")
+        elif 'openmpi' in mpi_lib_lower:
+            print("✅ OpenMPI detected!")
+        else:
+            print("⚠️  Unknown MPI implementation")
+        
+        # Check environment variables
+        mpi_vars = ['CRAY_MPICH_DIR', 'MPICH_DIR', 'MPICH_ROOT', 'MPT_DIR', 'HPE_MPT_DIR']
+        found_mpi = False
+        for var in mpi_vars:
+            if var in os.environ:
+                print(f"✅ Found {var}: {os.environ[var]}")
+                found_mpi = True
+        
+        if not found_mpi:
+            print("ℹ️  No MPI environment variables found (this is normal for some installations)")
+        
+        # Check mpirun version
+        try:
+            result = subprocess.run(['mpirun', '--version'], 
+                                  capture_output=True, text=True, timeout=10)
+            print(f"mpirun version output: {result.stdout[:200]}...")
+        except Exception as e:
+            print(f"❌ Could not check mpirun version: {e}")
+        
+        print()
+
+def test_mpi_features():
+    """Test MPI features"""
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+    size = comm.Get_size()
+    
+    if rank == 0:
+        print("=== MPI Feature Tests ===")
+    
+    # Test 1: Check MPI version and features
+    mpi_version = MPI.Get_version()
+    if rank == 0:
+        print(f"MPI Version: {mpi_version}")
+        print(f"MPI Library: {MPI.Get_library_version()}")
+    
+    # Test 2: Check available communicators
+    if rank == 0:
+        print(f"Available communicators:")
+        print(f"  COMM_WORLD: {MPI.COMM_WORLD}")
+        print(f"  COMM_SELF: {MPI.COMM_SELF}")
+        print(f"  COMM_NULL: {MPI.COMM_NULL}")
+    
+    # Test 3: Check MPI constants
+    if rank == 0:
+        print(f"MPI Constants:")
+        print(f"  ANY_SOURCE: {MPI.ANY_SOURCE}")
+        print(f"  ANY_TAG: {MPI.ANY_TAG}")
+        print(f"  UNDEFINED: {MPI.UNDEFINED}")
+    
+    # Test 4: Check data types
+    if rank == 0:
+        print(f"MPI Data Types:")
+        print(f"  INT: {MPI.INT}")
+        print(f"  DOUBLE: {MPI.DOUBLE}")
+        print(f"  CHAR: {MPI.CHAR}")
+    
+    # Test 5: Check operations
+    if rank == 0:
+        print(f"MPI Operations:")
+        print(f"  SUM: {MPI.SUM}")
+        print(f"  MAX: {MPI.MAX}")
+        print(f"  MIN: {MPI.MIN}")
+    
+    comm.Barrier()
+
+def test_mpi_performance():
+    """Test MPI performance characteristics"""
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+    size = comm.Get_size()
+    
+    if rank == 0:
+        print("=== MPI Performance Tests ===")
+    
+    # Test 1: Barrier timing
+    comm.Barrier()
+    start_time = MPI.Wtime()
+    comm.Barrier()
+    end_time = MPI.Wtime()
+    
+    if rank == 0:
+        barrier_time = end_time - start_time
+        print(f"Barrier synchronization time: {barrier_time:.6f} seconds")
+    
+    # Test 2: Point-to-point latency
+    if size >= 2:
+        iterations = 1000
+        if rank == 0:
+            # Send small messages to measure latency
+            start_time = MPI.Wtime()
+            for i in range(iterations):
+                comm.send(i, dest=1, tag=123)
+            end_time = MPI.Wtime()
+            send_time = end_time - start_time
+            latency = send_time / iterations * 1000000  # microseconds
+            print(f"Point-to-point latency: {latency:.2f} microseconds")
+            
+        elif rank == 1:
+            # Receive messages
+            for i in range(iterations):
+                data = comm.recv(source=0, tag=123)
+    
+    # Test 3: Bandwidth test
+    if size >= 2:
+        data_sizes = [1024, 10240, 102400]  # 1KB, 10KB, 100KB
+        
+        for data_size in data_sizes:
+            if rank == 0:
+                data = np.random.random(data_size).astype(np.float64)
+                start_time = MPI.Wtime()
+                comm.Send(data, dest=1, tag=456)
+                end_time = MPI.Wtime()
+                
+                transfer_time = end_time - start_time
+                bytes_sent = data_size * 8
+                bandwidth = bytes_sent / (transfer_time * 1024 * 1024)  # MB/s
+                print(f"Bandwidth ({data_size} elements): {bandwidth:.2f} MB/s")
+                
+            elif rank == 1:
+                data = np.empty(data_size, dtype=np.float64)
+                comm.Recv(data, source=0, tag=456)
+    
+    comm.Barrier()
+
+def test_mpi_collectives():
+    """Test MPI collective operations"""
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+    size = comm.Get_size()
+    
+    if rank == 0:
+        print("=== MPI Collective Tests ===")
+    
+    # Test 1: Broadcast
+    if rank == 0:
+        data = np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float64)
+    else:
+        data = np.empty(5, dtype=np.float64)
+    
+    comm.Bcast(data, root=0)
+    if rank == 0:
+        print(f"✅ Broadcast successful: {data}")
+    
+    # Test 2: Reduce
+    local_value = rank + 1.0
+    global_sum = comm.reduce(local_value, op=MPI.SUM, root=0)
+    if rank == 0:
+        expected_sum = sum(range(1, size + 1))
+        print(f"✅ Reduce successful: {global_sum} (expected: {expected_sum})")
+    
+    # Test 3: Allreduce
+    local_value = rank * 2.0
+    global_max = comm.allreduce(local_value, op=MPI.MAX)
+    if rank == 0:
+        expected_max = (size - 1) * 2.0
+        print(f"✅ Allreduce successful: {global_max} (expected: {expected_max})")
+    
+    # Test 4: Gather
+    local_data = np.array([rank], dtype=np.int32)
+    if rank == 0:
+        gathered_data = np.empty(size, dtype=np.int32)
+    else:
+        gathered_data = None
+    
+    comm.Gather(local_data, gathered_data, root=0)
+    if rank == 0:
+        expected = np.arange(size, dtype=np.int32)
+        if np.array_equal(gathered_data, expected):
+            print(f"✅ Gather successful: {gathered_data}")
+        else:
+            print(f"❌ Gather failed: got {gathered_data}, expected {expected}")
+    
+    comm.Barrier()
+
+def main():
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+    
+    if rank == 0:
+        print("=== MPI Implementation Test Suite ===")
+        print(f"Running on {comm.Get_size()} processes")
+        print(f"Hostname: {platform.node()}")
+        print()
+    
+    # Run all tests
+    check_mpi_environment()
+    comm.Barrier()
+    
+    test_mpi_features()
+    comm.Barrier()
+    
+    test_mpi_performance()
+    comm.Barrier()
+    
+    test_mpi_collectives()
+    comm.Barrier()
+    
+    if rank == 0:
+        print("\n=== Test Summary ===")
+        print("The test will show which MPI implementation you're using.")
+        print("Make sure you have loaded the appropriate MPI modules or conda environment.")
+        print("\n✅ MPI implementation tests completed!")
+    
+    MPI.Finalize()
+
+if __name__ == "__main__":
+    main()

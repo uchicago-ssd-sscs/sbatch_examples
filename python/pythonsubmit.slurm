@@ -12,9 +12,13 @@ cd $SLURM_SUBMIT_DIR
 #Load Python Anaconda 
 #module load python/anaconda3
 
-# Activate conda from existing installation in home directory
-conda init
-conda activate gpu
+# Activate conda environment from existing installation in home directory (non-interactive safe)
+if [ -f "$HOME/miniconda3/etc/profile.d/conda.sh" ]; then
+    source "$HOME/miniconda3/etc/profile.d/conda.sh"
+    conda activate gpu || echo "Warning: could not activate conda env 'gpu'"
+else
+    echo "Warning: conda.sh not found; skipping conda activation"
+fi
 
 #You may load a virtual environment 
 #source activate myenvironment

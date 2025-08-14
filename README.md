@@ -189,34 +189,71 @@ sbatch comprehensive_test_with_mpi.sh
 | `qstat -q` | `sinfo -p partition` | View partition/queue information |
 | `qstat -B` | `sinfo -s` | View server status summary |
 
+## Directory Structure
+
+```
+sbatch_examples/
+├── comprehensive_test_no_mpi.sh      # Serial computing validation suite
+├── comprehensive_test_with_mpi.sh    # MPI parallel computing validation suite
+├── fortran/                          # Fortran MPI examples
+├── python/                           # Python MPI and GPU examples
+│   ├── openmpi/                      # OpenMPI-specific network and GPU tests
+│   └── cray_mpich/                   # Cray MPICH testing scripts
+├── R/                                # R MPI examples
+├── matlab/                           # MATLAB parallel examples
+├── stata/                            # Stata array job examples
+└── container/                        # Container-based examples
+    ├── apptainer/                    # Apptainer/Singularity examples
+    └── podman/                       # Podman examples
+```
+
 ## Available Examples
 
 ### Basic Examples
-- **Fortran**: MPI hello world example
-- **Python**: MPI parallel Python example
-- **R**: R snow cluster example
-- **MATLAB**: Parallel MATLAB example
+- **Fortran**: MPI hello world example (`fortran/`)
+- **Python**: MPI parallel Python example (`python/`)
+- **R**: R snow cluster example (`R/`)
+- **MATLAB**: Parallel MATLAB example (`matlab/`)
 - **Mathematica**: Parallel Mathematica example
-- **Stata**: Array job example
+- **Stata**: Array job example (`stata/`)
+
+### GPU Examples
+- **Multi-GPU Benchmarking**: GPU performance testing (`python/gpu_benchmark_multi_gpu.py`)
+- **OpenMPI GPU Testing**: Multi-node GPU benchmarking with MPI (`python/openmpi/gpu_benchmark_mpi_multi_node.py`)
 
 ### Advanced Examples
 - **Spark**: Single-node and multi-node Spark cluster examples
 - **Comprehensive Serial Testing**: `comprehensive_test_no_mpi.sh` - Serial computing validation suite
 - **Comprehensive MPI Testing**: `comprehensive_test_with_mpi.sh` - Full MPI validation suite
+- **GPU Benchmarking**: Multi-GPU performance testing examples (`python/gpu_benchmark_multi_gpu.py`)
 
 ### MPI Testing Examples
-- **MPI Fortran**: Point-to-point and collective communication
-- **MPI C**: Comprehensive MPI operations and performance testing
-- **MPI Python**: mpi4py-based parallel computing
-- **MPI R**: Rmpi-based statistical parallel computing
-- **MPI MATLAB**: Parallel Computing Toolbox integration
+- **MPI Fortran**: Point-to-point and collective communication (`fortran/`)
+- **MPI Python**: mpi4py-based parallel computing (`python/`)
+- **MPI R**: Rmpi-based statistical parallel computing (`R/`)
+- **MPI MATLAB**: Parallel Computing Toolbox integration (`matlab/`)
 - **Performance Testing**: Scalability and bandwidth benchmarks
+- **OpenMPI Network Testing**: Specialized 100G Ethernet and network diagnostics (`python/openmpi/`)
+- **Cray MPICH Testing**: Comprehensive Cray MPICH functionality and performance tests (`python/cray_mpich/`)
+
+> **Note**: OpenMPI-specific network bandwidth and interface configuration tests are located in the `python/openmpi/` subdirectory. These include specialized scripts for 100G Ethernet testing and network diagnostics.
 
 ## Usage
 
 1. Copy the example scripts to your home directory
 2. Modify the scripts as needed for your specific application
 3. Submit jobs using `sbatch script.sh`
+
+> **Important**: Specialized MPI testing scripts are available in dedicated subdirectories:
+> - **OpenMPI Network Testing** (`python/openmpi/`):
+>   - `mpi_test_with_100G_ethernet.slurm` - Specialized 100G Ethernet MPI testing
+>   - `slurm_diagnostic.sh` - SLURM and MPI configuration diagnostics
+>   - `mpi_test.py` - Basic MPI functionality test
+>   - `network_bandwidth_test_v2.py` - Advanced network bandwidth testing
+>   - `gpu_benchmark_mpi_multi_node.py` - Multi-node GPU benchmarking with MPI
+> - **Cray MPICH Testing** (`python/cray_mpich/`):
+>   - `cray_mpich_test.py` - Comprehensive Cray MPICH functionality and performance tests
+>   - `cray_mpich_test.slurm` - SLURM batch script for Cray MPICH testing
 
 ### For Comprehensive Testing:
 ```bash
