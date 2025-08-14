@@ -106,62 +106,115 @@ def test_mpi_features():
     
     comm.Barrier()
 
-def test_mpi_performance():
-    """Test MPI performance characteristics"""
+def test_100g_bandwidth():
+    """Test 100G network bandwidth with appropriate data sizes"""
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
     size = comm.Get_size()
     
     if rank == 0:
-        print("=== MPI Performance Tests ===")
+        print("=== 100G Network Bandwidth Test ===")
+        print("Testing with data sizes appropriate for 100G networks")
+        print("Theoretical maximum: 12.5 GB/s")
+        print()
     
-    # Test 1: Barrier timing
-    comm.Barrier()
-    start_time = MPI.Wtime()
-    comm.Barrier()
-    end_time = MPI.Wtime()
-    
-    if rank == 0:
-        barrier_time = end_time - start_time
-        print(f"Barrier synchronization time: {barrier_time:.6f} seconds")
-    
-    # Test 2: Point-to-point latency
-    if size >= 2:
-        iterations = 1000
+    if size < 2:
         if rank == 0:
-            # Send small messages to measure latency
+            print("Need at least 2 processes for bandwidth test")
+        return
+    
+    # Data sizes appropriate for 100G networks
+    # Test sizes: 1GB, 4GB, 8GB, 16GB, 32GB
+    data_sizes_gb = [1, 4, 8, 16, 32]
+    
+    results = {}
+    
+    for data_size_gb in data_sizes_gb:
+        data_size_mb = data_size_gb * 1024
+        data_size_elements = int(data_size_mb * 1024 * 1024 // 8)  # float64 = 8 bytes
+        
+        if rank == 0:
+            print(f"\n--- Testing {data_size_gb}GB transfer ---")
+            print(f"Data size: {data_size_elements:,} elements ({data_size_gb}GB)")
+            
+            # Create data
+            data = np.random.random(data_size_elements).astype(np.float64)
+            
+            # Warm up
+            comm.Send(data[:1000], dest=1, tag=999)
+            
+            # Test send bandwidth
+            comm.Barrier()
             start_time = MPI.Wtime()
-            for i in range(iterations):
-                comm.send(i, dest=1, tag=123)
+            comm.Send(data, dest=1, tag=123)
             end_time = MPI.Wtime()
+            
             send_time = end_time - start_time
-            latency = send_time / iterations * 1000000  # microseconds
-            print(f"Point-to-point latency: {latency:.2f} microseconds")
+            bytes_sent = data_size_elements * 8
+            send_bandwidth = bytes_sent / (send_time * 1024 * 1024 * 1024)  # GB/s
+            
+            print(f"Send {data_size_gb}GB: {send_bandwidth:.2f} GB/s ({send_time:.3f}s)")
+            results[f'send_{data_size_gb}gb'] = send_bandwidth
             
         elif rank == 1:
-            # Receive messages
-            for i in range(iterations):
-                data = comm.recv(source=0, tag=123)
-    
-    # Test 3: Bandwidth test
-    if size >= 2:
-        data_sizes = [1024, 10240, 102400]  # 1KB, 10KB, 100KB
+            # Receive data
+            data = np.empty(data_size_elements, dtype=np.float64)
+            
+            # Warm up
+            comm.Recv(data[:1000], source=0, tag=999)
+            
+            # Test receive bandwidth
+            comm.Barrier()
+            start_time = MPI.Wtime()
+            comm.Recv(data, source=0, tag=123)
+            end_time = MPI.Wtime()
+            
+            recv_time = end_time - start_time
+            bytes_received = data_size_elements * 8
+            recv_bandwidth = bytes_received / (recv_time * 1024 * 1024 * 1024)  # GB/s
+            
+            print(f"Receive {data_size_gb}GB: {recv_bandwidth:.2f} GB/s ({recv_time:.3f}s)")
+            results[f'recv_{data_size_gb}gb'] = recv_bandwidth
         
-        for data_size in data_sizes:
-            if rank == 0:
-                data = np.random.random(data_size).astype(np.float64)
-                start_time = MPI.Wtime()
-                comm.Send(data, dest=1, tag=456)
-                end_time = MPI.Wtime()
-                
-                transfer_time = end_time - start_time
-                bytes_sent = data_size * 8
-                bandwidth = bytes_sent / (transfer_time * 1024 * 1024)  # MB/s
-                print(f"Bandwidth ({data_size} elements): {bandwidth:.2f} MB/s")
-                
-            elif rank == 1:
-                data = np.empty(data_size, dtype=np.float64)
-                comm.Recv(data, source=0, tag=456)
+        comm.Barrier()
+    
+    # Summary
+    if rank == 0:
+        print("\n" + "="*50)
+        print("100G BANDWIDTH TEST SUMMARY")
+        print("="*50)
+        print("Data Size | Send (GB/s) | Receive (GB/s)")
+        print("-" * 40)
+        
+        for data_size_gb in data_sizes_gb:
+            send_key = f'send_{data_size_gb}gb'
+            recv_key = f'recv_{data_size_gb}gb'
+            
+            if send_key in results:
+                send_bw = results[send_key]
+                recv_bw = results.get(recv_key, "N/A")
+                print(f"{data_size_gb:9d}GB | {send_bw:10.2f} | {recv_bw:12.2f}")
+        
+        print("\nExpected performance for 100G network:")
+        print("- Theoretical maximum: 12.5 GB/s")
+        print("- Good performance: 8-10 GB/s")
+        print("- Acceptable performance: 5-8 GB/s")
+        print("- Poor performance: <5 GB/s")
+        
+        # Calculate average bandwidth
+        send_bandwidths = [v for k, v in results.items() if k.startswith('send_')]
+        if send_bandwidths:
+            avg_send = np.mean(send_bandwidths)
+            print(f"\nAverage send bandwidth: {avg_send:.2f} GB/s")
+            
+            if avg_send >= 8:
+                print("✅ Excellent performance!")
+            elif avg_send >= 5:
+                print("✅ Good performance")
+            elif avg_send >= 2:
+                print("⚠️  Acceptable performance, but room for improvement")
+            else:
+                print("❌ Poor performance - check network configuration")
     
     comm.Barrier()
 
@@ -220,9 +273,10 @@ def main():
     rank = comm.Get_rank()
     
     if rank == 0:
-        print("=== MPI Implementation Test Suite ===")
+        print("=== 100G MPI Implementation Test Suite ===")
         print(f"Running on {comm.Get_size()} processes")
         print(f"Hostname: {platform.node()}")
+        print("Testing with data sizes appropriate for 100G networks")
         print()
     
     # Run all tests
@@ -232,7 +286,7 @@ def main():
     test_mpi_features()
     comm.Barrier()
     
-    test_mpi_performance()
+    test_100g_bandwidth()
     comm.Barrier()
     
     test_mpi_collectives()
@@ -240,9 +294,9 @@ def main():
     
     if rank == 0:
         print("\n=== Test Summary ===")
-        print("The test will show which MPI implementation you're using.")
+        print("The test shows which MPI implementation you're using and 100G network performance.")
         print("Make sure you have loaded the appropriate MPI modules or conda environment.")
-        print("\n✅ MPI implementation tests completed!")
+        print("\n✅ 100G MPI implementation tests completed!")
     
     MPI.Finalize()
 

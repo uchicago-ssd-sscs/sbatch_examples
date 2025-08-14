@@ -6,7 +6,7 @@
 #SBATCH --nodes=2
 #SBATCH --ntasks-per-node=2
 #SBATCH --cpus-per-task=1
-#SBATCH --mem=4G
+#SBATCH --mem=64G
 #SBATCH --export=ALL
 
 echo "=== Cray MPICH Python Test ==="
@@ -21,12 +21,16 @@ echo ""
 # Option 1: HPE MPT (recommended for HPE systems)
 module load mpt/2.31
 
-# Option 2: If using conda-installed MPI, uncomment these:
-# conda activate your_mpi_env  # if you created a separate conda environment
-# # No module loading needed for conda-installed MPI
-
 # Option 3: Alternative HPE module
 # module load hmpt/2.31
+
+# Activate conda environment (non-interactive safe)
+if [ -f "$HOME/miniconda3/etc/profile.d/conda.sh" ]; then
+    source "$HOME/miniconda3/etc/profile.d/conda.sh"
+    conda activate hpe_mpi || echo "Warning: could not activate conda env 'hpe_mpi'"
+else
+    echo "Warning: conda.sh not found; skipping conda activation"
+fi
 
 # Check MPI implementation
 echo "=== MPI Implementation Info ==="
@@ -55,12 +59,15 @@ echo "=== Python MPI Bindings ==="
 python -c "from mpi4py import MPI; print(f'MPI Library: {MPI.Get_library_version()}'); print(f'MPI Version: {MPI.Get_version()}')"
 echo ""
 
-# Run the Cray MPICH specific test
-echo "=== Running Cray MPICH Specific Test ==="
-mpirun -np $SLURM_NTASKS python cray_mpich_specific_test.py
+# Run the 100G MPI implementation test
+echo "=== Running 100G MPI Implementation Test ==="
+echo "Testing with data sizes: 1GB, 4GB, 8GB, 16GB, 32GB"
+echo "Expected performance: 8-12.5 GB/s for 100G network"
+echo ""
+mpirun -np $SLURM_NTASKS python mpi_implementation_test.py
 
 echo ""
-echo "=== Running Basic Cray MPICH Test ==="
+echo "=== Running Basic MPI Test ==="
 mpirun -np $SLURM_NTASKS python cray_mpich_test.py
 
 echo ""
