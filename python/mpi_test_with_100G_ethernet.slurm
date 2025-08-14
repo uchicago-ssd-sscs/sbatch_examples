@@ -92,9 +92,9 @@ echo "UCX_SOCKADDR_CM_SOURCE_ADDRESS: ${UCX_SOCKADDR_CM_SOURCE_ADDRESS}"
 # Test MPI
 echo "Testing MPI multi-node communication with 100 Gbps Ethernet configuration..."
 
-# Create hostfile using allocated hostnames (compatible with PRTE/SLURM)
-echo "Creating hostfile (hostnames from SLURM allocation)..."
-scontrol show hostnames $SLURM_JOB_NODELIST > hostfile.txt
+# Create hostfile using allocated hostnames with .data1 suffix for MPI
+echo "Creating hostfile (hostnames from SLURM allocation with .data1 suffix)..."
+scontrol show hostnames $SLURM_JOB_NODELIST | sed 's/$/.data1/' > hostfile.txt
 echo "Hostfile contents:"
 cat hostfile.txt
 
