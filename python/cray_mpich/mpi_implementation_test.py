@@ -23,6 +23,17 @@ def check_mpi_environment():
     if rank == 0:
         print("=== MPI Implementation Check ===")
         
+        # Check available memory
+        try:
+            import psutil
+            memory = psutil.virtual_memory()
+            print(f"Available memory: {memory.total / (1024**3):.1f} GB")
+            print(f"Free memory: {memory.available / (1024**3):.1f} GB")
+            print(f"Memory usage: {memory.percent:.1f}%")
+        except ImportError:
+            print("psutil not available - cannot check memory")
+        print()
+        
         # Check MPI library version
         mpi_lib = MPI.Get_library_version()
         print(f"MPI Library: {mpi_lib}")
@@ -116,6 +127,7 @@ def test_100g_bandwidth():
         print("=== 100G Network Bandwidth Test ===")
         print("Testing with data sizes appropriate for 100G networks")
         print("Theoretical maximum: 12.5 GB/s")
+        print(f"Total processes: {size}")
         print()
     
     if size < 2:
@@ -125,9 +137,14 @@ def test_100g_bandwidth():
     
     # Data sizes appropriate for 100G networks
     # Test sizes: 1GB, 4GB, 8GB, 16GB, 32GB
+    # Note: 32GB requires ~128GB memory allocation to avoid swapping
     data_sizes_gb = [1, 4, 8, 16, 32]
     
     results = {}
+    
+    # Test point-to-point between first two nodes
+    if rank == 0:
+        print("\n--- Point-to-Point Bandwidth Test (Node 0 -> Node 1) ---")
     
     for data_size_gb in data_sizes_gb:
         data_size_mb = data_size_gb * 1024
@@ -137,8 +154,11 @@ def test_100g_bandwidth():
             print(f"\n--- Testing {data_size_gb}GB transfer ---")
             print(f"Data size: {data_size_elements:,} elements ({data_size_gb}GB)")
             
-            # Create data
+            # Create data with memory optimization
+            print(f"Allocating {data_size_gb}GB send buffer...")
             data = np.random.random(data_size_elements).astype(np.float64)
+            # Force memory allocation to complete
+            data.flush()
             
             # Warm up
             comm.Send(data[:1000], dest=1, tag=999)
@@ -157,8 +177,11 @@ def test_100g_bandwidth():
             results[f'send_{data_size_gb}gb'] = send_bandwidth
             
         elif rank == 1:
-            # Receive data
+            # Receive data with memory optimization
+            print(f"Allocating {data_size_gb}GB receive buffer...")
             data = np.empty(data_size_elements, dtype=np.float64)
+            # Force memory allocation to complete
+            data.flush()
             
             # Warm up
             comm.Recv(data[:1000], source=0, tag=999)
@@ -177,6 +200,10 @@ def test_100g_bandwidth():
             results[f'recv_{data_size_gb}gb'] = recv_bandwidth
         
         comm.Barrier()
+    
+    # Multi-node collective test
+    if size >= 5:
+        test_multi_node_collectives(comm, rank, size)
     
     # Summary
     if rank == 0:
@@ -215,6 +242,81 @@ def test_100g_bandwidth():
                 print("⚠️  Acceptable performance, but room for improvement")
             else:
                 print("❌ Poor performance - check network configuration")
+    
+    comm.Barrier()
+
+def test_multi_node_collectives(comm, rank, size):
+    """Test collective operations across multiple nodes"""
+    if rank == 0:
+        print("\n--- Multi-Node Collective Test ---")
+        print(f"Testing collectives across {size} processes")
+    
+    # Test 1: Allreduce with large data
+    if rank == 0:
+        print("\nTesting Allreduce with 1GB data per process...")
+    
+    # Each process contributes 1GB of data
+    data_size_gb = 1
+    data_size_elements = int(data_size_gb * 1024 * 1024 * 1024 // 8)
+    
+    # Create local data
+    local_data = np.random.random(data_size_elements).astype(np.float64)
+    
+    # Allreduce operation
+    comm.Barrier()
+    start_time = MPI.Wtime()
+    global_sum = comm.allreduce(local_data, op=MPI.SUM)
+    end_time = MPI.Wtime()
+    
+    allreduce_time = end_time - start_time
+    total_bytes = data_size_elements * 8 * size  # All processes contribute
+    
+    if rank == 0:
+        allreduce_bandwidth = total_bytes / (allreduce_time * 1024 * 1024 * 1024)
+        print(f"Allreduce {data_size_gb}GB per process: {allreduce_bandwidth:.2f} GB/s ({allreduce_time:.3f}s)")
+    
+    # Test 2: Broadcast large data from root
+    if rank == 0:
+        print("\nTesting Broadcast with 4GB data...")
+        broadcast_data = np.random.random(int(4 * 1024 * 1024 * 1024 // 8)).astype(np.float64)
+    else:
+        broadcast_data = np.empty(int(4 * 1024 * 1024 * 1024 // 8), dtype=np.float64)
+    
+    comm.Barrier()
+    start_time = MPI.Wtime()
+    comm.Bcast(broadcast_data, root=0)
+    end_time = MPI.Wtime()
+    
+    broadcast_time = end_time - start_time
+    broadcast_bytes = 4 * 1024 * 1024 * 1024  # 4GB
+    
+    if rank == 0:
+        broadcast_bandwidth = broadcast_bytes / (broadcast_time * 1024 * 1024 * 1024)
+        print(f"Broadcast 4GB: {broadcast_bandwidth:.2f} GB/s ({broadcast_time:.3f}s)")
+    
+    # Test 3: Gather data from all processes
+    if rank == 0:
+        print("\nTesting Gather with 100MB data per process...")
+    
+    gather_data_size = int(100 * 1024 * 1024 // 8)  # 100MB per process
+    local_gather_data = np.random.random(gather_data_size).astype(np.float64)
+    
+    if rank == 0:
+        gathered_data = np.empty(gather_data_size * size, dtype=np.float64)
+    else:
+        gathered_data = None
+    
+    comm.Barrier()
+    start_time = MPI.Wtime()
+    comm.Gather(local_gather_data, gathered_data, root=0)
+    end_time = MPI.Wtime()
+    
+    gather_time = end_time - start_time
+    gather_bytes = gather_data_size * 8 * size  # All processes contribute
+    
+    if rank == 0:
+        gather_bandwidth = gather_bytes / (gather_time * 1024 * 1024 * 1024)
+        print(f"Gather {100}MB per process: {gather_bandwidth:.2f} GB/s ({gather_time:.3f}s)")
     
     comm.Barrier()
 
