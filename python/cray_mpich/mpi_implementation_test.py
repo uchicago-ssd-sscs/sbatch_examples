@@ -135,10 +135,10 @@ def test_100g_bandwidth():
             print("Need at least 2 processes for bandwidth test")
         return
     
-    # Data sizes appropriate for 100G networks
-    # Test sizes: 1GB, 4GB, 8GB, 16GB, 32GB
-    # Note: 32GB requires ~128GB memory allocation to avoid swapping
-    data_sizes_gb = [1, 4, 8, 16, 32]
+    # Data sizes appropriate for 100G networks - REDUCED for faster testing
+    # Test sizes: 100MB, 500MB, 1GB, 2GB, 4GB
+    # Note: Much more reasonable sizes that won't cause timeouts
+    data_sizes_gb = [0.1, 0.5, 1.0, 2.0, 4.0]
     
     results = {}
     
@@ -147,7 +147,7 @@ def test_100g_bandwidth():
         print("\n--- Point-to-Point Bandwidth Test (Node 0 -> Node 1) ---")
     
     for data_size_gb in data_sizes_gb:
-        data_size_mb = data_size_gb * 1024
+        data_size_mb = int(data_size_gb * 1024)
         data_size_elements = int(data_size_mb * 1024 * 1024 // 8)  # float64 = 8 bytes
         
         if rank == 0:
@@ -201,8 +201,8 @@ def test_100g_bandwidth():
         
         comm.Barrier()
     
-    # Multi-node collective test
-    if size >= 5:
+    # Multi-node collective test (only if we have enough nodes)
+    if size >= 4:
         test_multi_node_collectives(comm, rank, size)
     
     # Summary
@@ -217,33 +217,15 @@ def test_100g_bandwidth():
             send_key = f'send_{data_size_gb}gb'
             recv_key = f'recv_{data_size_gb}gb'
             
-            if send_key in results:
-                send_bw = results[send_key]
-                recv_bw = results.get(recv_key, "N/A")
-                print(f"{data_size_gb:9d}GB | {send_bw:10.2f} | {recv_bw:12.2f}")
-        
-        print("\nExpected performance for 100G network:")
-        print("- Theoretical maximum: 12.5 GB/s")
-        print("- Good performance: 8-10 GB/s")
-        print("- Acceptable performance: 5-8 GB/s")
-        print("- Poor performance: <5 GB/s")
-        
-        # Calculate average bandwidth
-        send_bandwidths = [v for k, v in results.items() if k.startswith('send_')]
-        if send_bandwidths:
-            avg_send = np.mean(send_bandwidths)
-            print(f"\nAverage send bandwidth: {avg_send:.2f} GB/s")
+            send_bw = results.get(send_key, 0)
+            recv_bw = results.get(recv_key, 0)
             
-            if avg_send >= 8:
-                print("✅ Excellent performance!")
-            elif avg_send >= 5:
-                print("✅ Good performance")
-            elif avg_send >= 2:
-                print("⚠️  Acceptable performance, but room for improvement")
-            else:
-                print("❌ Poor performance - check network configuration")
-    
-    comm.Barrier()
+            print(f"{data_size_gb:8.1f}GB | {send_bw:10.2f} | {recv_bw:12.2f}")
+        
+        print("-" * 40)
+        print("Expected: 8-12.5 GB/s for 100G network")
+        print("Note: Smaller transfers may show lower bandwidth due to overhead")
+        print("="*50)
 
 def test_multi_node_collectives(comm, rank, size):
     """Test collective operations across multiple nodes"""

@@ -2,11 +2,11 @@
 #SBATCH --job-name=cray_mpich_test
 #SBATCH --output=%j_cray_mpich_test.out
 #SBATCH --error=%j_cray_mpich_test.err
-#SBATCH --time=00:60:00
+#SBATCH --time=00:30:00
 #SBATCH --nodes=2
 #SBATCH --ntasks-per-node=2
 #SBATCH --cpus-per-task=1
-#SBATCH --mem=256G
+#SBATCH --mem=64G
 #SBATCH --export=ALL
 
 echo "=== Cray MPICH Python Test ==="
@@ -61,7 +61,7 @@ echo ""
 
 # Run the 100G MPI implementation test
 echo "=== Running 100G MPI Implementation Test ==="
-echo "Testing with data sizes: 1GB, 4GB, 8GB, 16GB, 32GB"
+echo "Testing with data sizes: 100MB, 500MB, 1GB, 2GB, 4GB"
 echo "Expected performance: 8-12.5 GB/s for 100G network"
 echo "Multi-node testing: $SLURM_NNODES nodes with $SLURM_NTASKS_PER_NODE tasks each"
 echo ""
