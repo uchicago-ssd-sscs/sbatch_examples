@@ -19,10 +19,10 @@ echo ""
 
 # Load MPI modules (choose one based on your system)
 # Option 1: HPE MPT (recommended for HPE systems)
-module load mpt/2.31
+# module load mpt/2.31
 
 # Option 3: Alternative HPE module
-# module load hmpt/2.31
+module load hmpt/2.31
 
 # Activate conda environment (non-interactive safe)
 if [ -f "$HOME/miniconda3/etc/profile.d/conda.sh" ]; then
