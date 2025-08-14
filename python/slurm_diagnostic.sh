@@ -18,18 +18,34 @@ echo "   SLURM_PROCID: $SLURM_PROCID"
 echo ""
 
 echo "3. Expanded Node List:"
-echo "   scontrol show hostnames \$SLURM_JOB_NODELIST:"
+echo "   SLURM hostnames (scontrol show hostnames \$SLURM_JOB_NODELIST):"
 scontrol show hostnames $SLURM_JOB_NODELIST
+echo ""
+echo "   MPI hostnames (from hostfile.txt with .data1 suffix):"
+if [ -f "hostfile.txt" ]; then
+    cat hostfile.txt
+else
+    echo "   hostfile.txt not found"
+fi
 echo ""
 
 echo "4. SLURM Configuration:"
 echo "   SLURM MPI configuration:"
 scontrol show config | grep -i mpi || echo "   No MPI config found"
 echo ""
+echo "   SLURM MPI parameters:"
+scontrol show config | grep -i "mpi.*param\|param.*mpi" || echo "   No MPI parameters found"
+echo ""
+echo "   SLURM plugins:"
+scontrol show config | grep -i plugin || echo "   No plugin config found"
+echo ""
 
 echo "5. Available MPI:"
 echo "   mpirun version:"
 mpirun --version 2>/dev/null || echo "   mpirun not found"
+echo ""
+echo "   OpenMPI configuration:"
+ompi_info --parsable 2>/dev/null | grep -E "^(mca|btl|pml)" | head -10 || echo "   ompi_info not available"
 echo ""
 
 echo "6. Network Connectivity:"
