@@ -35,20 +35,23 @@ echo "=== CONFIGURING MPI FOR 100 GBPS ETHERNET (bond1) ==="
 # Method 1: OpenMPI TCP configuration for Ethernet (no UCX)
 export OMPI_MCA_btl=self,tcp        # use only loopback and TCP BTLs
 export OMPI_MCA_pml=ob1             # default pml without UCX
-export OMPI_MCA_btl_tcp_sndbuf=67108864
-export OMPI_MCA_btl_tcp_rcvbuf=67108864
-export OMPI_MCA_btl_tcp_eager_limit=65536
-export OMPI_MCA_btl_tcp_rndv_eager_limit=65536
+export OMPI_MCA_btl_tcp_sndbuf=67108864    # 64MB send buffer for high bandwidth
+export OMPI_MCA_btl_tcp_rcvbuf=67108864    # 64MB receive buffer for high bandwidth
+export OMPI_MCA_btl_tcp_eager_limit=65536  # 64KB eager send threshold
+export OMPI_MCA_btl_tcp_rndv_eager_limit=65536  # 64KB rendezvous eager threshold
+# Force OOB (Out-of-Band) to use 100G interface by excluding others
+export OMPI_MCA_oob_tcp_if_exclude="bond0,bond2,lo"  # exclude 1G, 20G, and loopback interfaces
+export PRTE_MCA_oob_tcp_if_exclude="bond0,bond2,lo"  # PRTE OOB interface exclusion (same as above)
 
 
 # Method 2: (UCX not available in this OpenMPI build) — do not configure UCX
 unset UCX_NET_DEVICES UCX_TLS UCX_SOCKADDR_TLS_PRIORITY UCX_TCP_CM_REUSEADDR UCX_TCP_MAX_RETRIES UCX_VERBOSE
 
 # Method 3: Disable shared memory for cross-node communication
-export OMPI_MCA_btl_sm="^sm"  # Disable shared memory BTL
+export OMPI_MCA_btl_sm="^sm"  # Disable shared memory BTL for cross-node communication
 
 # Force use of only bond1 (100G) interface by excluding others
-export OMPI_MCA_btl_tcp_if_exclude="bond0,bond2,lo"
+export OMPI_MCA_btl_tcp_if_exclude="bond0,bond2,lo"  # exclude 1G, 20G, and loopback interfaces
 
 # Print network interface information
 echo "=== NETWORK INTERFACE INFORMATION ==="
@@ -124,6 +127,15 @@ echo "Launching $SLURM_NTASKS MPI processes across $SLURM_NNODES nodes..."
 mpirun -np $SLURM_NTASKS --hostfile hostfile.txt \
   --mca btl_base_verbose 100 \
   --mca oob_base_verbose 100 \
+  --mca btl "$OMPI_MCA_btl" \
+  --mca pml "$OMPI_MCA_pml" \
+  --mca btl_sm "$OMPI_MCA_btl_sm" \
+  --mca oob_tcp_if_exclude "$OMPI_MCA_oob_tcp_if_exclude" \
+  --mca btl_tcp_if_exclude "$OMPI_MCA_btl_tcp_if_exclude" \
+  --mca btl_tcp_sndbuf "$OMPI_MCA_btl_tcp_sndbuf" \
+  --mca btl_tcp_rcvbuf "$OMPI_MCA_btl_tcp_rcvbuf" \
+  --mca btl_tcp_eager_limit "$OMPI_MCA_btl_tcp_eager_limit" \
+  --mca btl_tcp_rndv_eager_limit "$OMPI_MCA_btl_tcp_rndv_eager_limit" \
   python mpi_test.py
 
 echo "MPI test completed"
@@ -134,6 +146,15 @@ echo "Testing actual cross-node network performance with 100 Gbps Ethernet..."
 mpirun -np $SLURM_NTASKS --hostfile hostfile.txt \
   --mca btl_base_verbose 100 \
   --mca oob_base_verbose 100 \
+  --mca btl "$OMPI_MCA_btl" \
+  --mca pml "$OMPI_MCA_pml" \
+  --mca btl_sm "$OMPI_MCA_btl_sm" \
+  --mca oob_tcp_if_exclude "$OMPI_MCA_oob_tcp_if_exclude" \
+  --mca btl_tcp_if_exclude "$OMPI_MCA_btl_tcp_if_exclude" \
+  --mca btl_tcp_sndbuf "$OMPI_MCA_btl_tcp_sndbuf" \
+  --mca btl_tcp_rcvbuf "$OMPI_MCA_btl_tcp_rcvbuf" \
+  --mca btl_tcp_eager_limit "$OMPI_MCA_btl_tcp_eager_limit" \
+  --mca btl_tcp_rndv_eager_limit "$OMPI_MCA_btl_tcp_rndv_eager_limit" \
   python network_bandwidth_test_v2.py
 
 echo "Network bandwidth test completed"
