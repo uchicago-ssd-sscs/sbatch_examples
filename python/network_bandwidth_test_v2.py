@@ -225,6 +225,9 @@ def main():
         print("3. Network interface selection")
         print("4. System resource limits")
         print("5. Switch configuration and cable quality")
+    
+    # Ensure proper MPI finalization
+    MPI.Finalize()
 
 if __name__ == "__main__":
     main()

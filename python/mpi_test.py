@@ -62,6 +62,9 @@ def main():
     
     if rank == 0:
         print("\nMPI test completed!")
+    
+    # Ensure proper MPI finalization
+    MPI.Finalize()
 
 if __name__ == "__main__":
     main()
