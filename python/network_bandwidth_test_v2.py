@@ -205,7 +205,7 @@ def main():
     
     # Test with different data sizes (larger to reduce overhead)
     for data_size_mb in [1024, 4096, 8192]:
-        test_network_bandwidth_improved(comm, rank, size, data_size_mb, iterations=5)
+        test_network_bandwidth(comm, rank, size, data_size_mb, iterations=5)
         comm.Barrier()
     
     # Test bidirectional
@@ -215,7 +215,7 @@ def main():
     test_large_transfer(comm, rank, size, data_size_mb=16384, iterations=2)
     
     if rank == 0:
-        print("\n=== IMPROVED NETWORK BANDWIDTH TEST COMPLETED ===")
+        print("\n=== NETWORK BANDWIDTH TEST COMPLETED ===")
         print("Expected bandwidth for 100 Gbps interface: ~10-12 GB/s")
         print("If results are significantly lower, check:")
         print("1. MPI is using bond1 (100 Gbps) not bond0 (1 Gbps)")
