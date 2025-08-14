@@ -47,6 +47,9 @@ unset UCX_NET_DEVICES UCX_TLS UCX_SOCKADDR_TLS_PRIORITY UCX_TCP_CM_REUSEADDR UCX
 # Method 3: Disable shared memory for cross-node communication
 export OMPI_MCA_btl_sm="^sm"  # Disable shared memory BTL
 
+# Force use of only bond1 (100G) interface by excluding others
+export OMPI_MCA_btl_tcp_if_exclude="bond0,bond2,lo"
+
 # Print network interface information
 echo "=== NETWORK INTERFACE INFORMATION ==="
 echo "Available interfaces:"
@@ -119,14 +122,8 @@ fi
 echo "Testing MPI with 100 Gbps Ethernet configuration..."
 echo "Launching $SLURM_NTASKS MPI processes across $SLURM_NNODES nodes..."
 mpirun -np $SLURM_NTASKS --hostfile hostfile.txt \
-  --prtemca oob_tcp_if_include 10.150.0.0/16 \
-  --mca pml ob1 \
-  --mca btl self,tcp \
-  --mca btl_tcp_sndbuf 67108864 \
-  --mca btl_tcp_rcvbuf 67108864 \
   --mca btl_base_verbose 100 \
   --mca oob_base_verbose 100 \
-  -x OMPI_MCA_btl -x OMPI_MCA_pml \
   python mpi_test.py
 
 echo "MPI test completed"
@@ -135,14 +132,8 @@ echo ""
 echo "=== RUNNING NETWORK BANDWIDTH TEST WITH 100 GBPS ETHERNET ==="
 echo "Testing actual cross-node network performance with 100 Gbps Ethernet..."
 mpirun -np $SLURM_NTASKS --hostfile hostfile.txt \
-  --prtemca oob_tcp_if_include 10.150.0.0/16 \
-  --mca pml ob1 \
-  --mca btl self,tcp \
-  --mca btl_tcp_sndbuf 67108864 \
-  --mca btl_tcp_rcvbuf 67108864 \
   --mca btl_base_verbose 100 \
   --mca oob_base_verbose 100 \
-  -x OMPI_MCA_btl -x OMPI_MCA_pml \
   python network_bandwidth_test_v2.py
 
 echo "Network bandwidth test completed"
