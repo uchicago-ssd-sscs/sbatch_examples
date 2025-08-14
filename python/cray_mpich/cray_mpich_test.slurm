@@ -2,7 +2,7 @@
 #SBATCH --job-name=cray_mpich_test
 #SBATCH --output=%j_cray_mpich_test.out
 #SBATCH --error=%j_cray_mpich_test.err
-#SBATCH --time=00:10:00
+#SBATCH --time=00:60:00
 #SBATCH --nodes=5
 #SBATCH --ntasks-per-node=2
 #SBATCH --cpus-per-task=1
