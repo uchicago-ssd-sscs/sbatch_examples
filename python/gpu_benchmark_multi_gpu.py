@@ -165,7 +165,7 @@ def benchmark_multi_gpu_memory_bandwidth(size_mb=2048, iterations=10):
         b_cpu = a_cpu.copy()
     cpu_copy_time = time.time() - start_time
     results['cpu_copy_time'] = cpu_copy_time / iterations
-    results['cpu_copy_bandwidth'] = (size_mb * iterations) / (cpu_copy_time / 1024)  # GB/s
+    results['cpu_copy_bandwidth'] = (size_mb * iterations) / (cpu_copy_time * 1024)  # GB/s
     
     # Multi-GPU operations using PyTorch
     if TORCH_AVAILABLE and TORCH_GPU_AVAILABLE:
@@ -184,7 +184,7 @@ def benchmark_multi_gpu_memory_bandwidth(size_mb=2048, iterations=10):
         torch.cuda.synchronize()
         single_gpu_time = time.time() - start_time
         results['single_gpu_copy_time'] = single_gpu_time / iterations
-        results['single_gpu_copy_bandwidth'] = (size_mb * iterations) / (single_gpu_time / 1024)  # GB/s
+        results['single_gpu_copy_bandwidth'] = (size_mb * iterations) / (single_gpu_time * 1024)  # GB/s
         
         # Test multi-GPU if we have multiple GPUs
         if gpu_count > 1:
@@ -226,7 +226,7 @@ def benchmark_multi_gpu_memory_bandwidth(size_mb=2048, iterations=10):
             for _, _, chunk_size_i in gpu_tensors:
                 total_size_mb += (chunk_size_i * 4) / (1024 * 1024)  # Convert to MB
             
-            results['multi_gpu_copy_bandwidth'] = (total_size_mb * iterations) / (multi_gpu_time / 1024)  # GB/s
+            results['multi_gpu_copy_bandwidth'] = (total_size_mb * iterations) / (multi_gpu_time * 1024)  # GB/s
             
             # Clean up
             for a_chunk, b_chunk, _ in gpu_tensors:

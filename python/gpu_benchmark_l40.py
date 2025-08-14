@@ -137,7 +137,7 @@ def benchmark_memory_bandwidth_large(size_mb=4096, iterations=10):
         b_cpu = a_cpu.copy()
     cpu_copy_time = time.time() - start_time
     results['cpu_copy_time'] = cpu_copy_time / iterations
-    results['cpu_copy_bandwidth'] = (size_mb * iterations) / (cpu_copy_time / 1024)  # GB/s
+    results['cpu_copy_bandwidth'] = (size_mb * iterations) / (cpu_copy_time * 1024)  # GB/s
     
     # GPU operations using PyTorch
     if TORCH_AVAILABLE and TORCH_GPU_AVAILABLE:
@@ -157,7 +157,7 @@ def benchmark_memory_bandwidth_large(size_mb=4096, iterations=10):
             torch.cuda.synchronize()
             gpu_copy_time = time.time() - start_time
             results['gpu_copy_time'] = gpu_copy_time / iterations
-            results['gpu_copy_bandwidth'] = (size_mb * iterations) / (gpu_copy_time / 1024)  # GB/s
+            results['gpu_copy_bandwidth'] = (size_mb * iterations) / (gpu_copy_time * 1024)  # GB/s
             
             # Host to device transfer
             torch.cuda.synchronize()
@@ -167,7 +167,7 @@ def benchmark_memory_bandwidth_large(size_mb=4096, iterations=10):
             torch.cuda.synchronize()
             h2d_time = time.time() - start_time
             results['h2d_time'] = h2d_time / iterations
-            results['h2d_bandwidth'] = (size_mb * iterations) / (h2d_time / 1024)  # GB/s
+            results['h2d_bandwidth'] = (size_mb * iterations) / (h2d_time * 1024)  # GB/s
             
             # Device to host transfer
             torch.cuda.synchronize()
@@ -177,7 +177,7 @@ def benchmark_memory_bandwidth_large(size_mb=4096, iterations=10):
             torch.cuda.synchronize()
             d2h_time = time.time() - start_time
             results['d2h_time'] = d2h_time / iterations
-            results['d2h_bandwidth'] = (size_mb * iterations) / (d2h_time / 1024)  # GB/s
+            results['d2h_bandwidth'] = (size_mb * iterations) / (d2h_time * 1024)  # GB/s
             
             del a_gpu, b_gpu
             torch.cuda.empty_cache()
