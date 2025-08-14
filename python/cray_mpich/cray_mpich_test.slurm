@@ -3,7 +3,7 @@
 #SBATCH --output=%j_cray_mpich_test.out
 #SBATCH --error=%j_cray_mpich_test.err
 #SBATCH --time=00:60:00
-#SBATCH --nodes=5
+#SBATCH --nodes=2
 #SBATCH --ntasks-per-node=2
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=256G
