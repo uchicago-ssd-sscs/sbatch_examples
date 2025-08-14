@@ -131,6 +131,7 @@ mpirun -np $SLURM_NTASKS --hostfile hostfile.txt \
   --mca btl self,tcp \
   --mca oob_tcp_if_include bond1 \
   --mca btl_tcp_if_include bond1 \
+  --mca btl_tcp_if_exclude bond0,bond2 \
   --mca btl_tcp_sndbuf 67108864 \
   --mca btl_tcp_rcvbuf 67108864 \
   --mca btl_base_verbose 100 \
@@ -150,6 +151,7 @@ mpirun -np $SLURM_NTASKS --hostfile hostfile.txt \
   --mca btl self,tcp \
   --mca oob_tcp_if_include bond1 \
   --mca btl_tcp_if_include bond1 \
+  --mca btl_tcp_if_exclude bond0,bond2 \
   --mca btl_tcp_sndbuf 67108864 \
   --mca btl_tcp_rcvbuf 67108864 \
   --mca btl_base_verbose 100 \
