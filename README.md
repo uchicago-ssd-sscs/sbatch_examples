@@ -218,6 +218,8 @@ sbatch_examples/
 - **Stata**: Array job example (`stata/`)
 
 ### GPU Examples
+- **Standard GPU Benchmark**: Conservative GPU performance testing for most systems (`python/gpu_benchmark_standard.py`)
+- **Large-Scale GPU Benchmark**: High-performance GPU testing for H100/A100 systems (`python/gpu_benchmark_large.py`)
 - **Multi-GPU Benchmarking**: GPU performance testing (`python/gpu_benchmark_multi_gpu.py`)
 - **OpenMPI GPU Testing**: Multi-node GPU benchmarking with MPI (`python/openmpi/gpu_benchmark_mpi_multi_node.py`)
 
@@ -225,7 +227,7 @@ sbatch_examples/
 - **Spark**: Single-node and multi-node Spark cluster examples
 - **Comprehensive Serial Testing**: `comprehensive_test_no_mpi.sh` - Serial computing validation suite
 - **Comprehensive MPI Testing**: `comprehensive_test_with_mpi.sh` - Full MPI validation suite
-- **GPU Benchmarking**: Multi-GPU performance testing examples (`python/gpu_benchmark_multi_gpu.py`)
+- **GPU Benchmarking**: Standard and large-scale GPU performance testing examples
 
 ### MPI Testing Examples
 - **MPI Fortran**: Point-to-point and collective communication (`fortran/`)
