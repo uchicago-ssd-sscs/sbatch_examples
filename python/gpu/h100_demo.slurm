@@ -8,7 +8,6 @@
 #SBATCH --mem=128G
 #SBATCH --time=00:30:00
 #SBATCH --partition=H100
-#SBATCH --gres=gpu:2
 
 # Move into the directory you submitted from
 cd $SLURM_SUBMIT_DIR

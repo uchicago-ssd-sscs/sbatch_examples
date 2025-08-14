@@ -210,7 +210,7 @@ def main():
         print("❌ CUDA not available. Cannot run H100 demonstrations.")
         return
     
-    print(f"✅ CUDA available: {torch.cuda.get_device_count()} GPU(s)")
+    print(f"✅ CUDA available: {torch.cuda.device_count()} GPU(s)")
     
     # Run demonstrations
     demo_massive_matrix_ops()
