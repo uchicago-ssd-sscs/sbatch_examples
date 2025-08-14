@@ -157,8 +157,8 @@ def test_100g_bandwidth():
             # Create data with memory optimization
             print(f"Allocating {data_size_gb}GB send buffer...")
             data = np.random.random(data_size_elements).astype(np.float64)
-            # Force memory allocation to complete
-            data.flush()
+            # Force memory allocation to complete by accessing the array
+            _ = data[0]
             
             # Warm up
             comm.Send(data[:1000], dest=1, tag=999)
@@ -180,8 +180,8 @@ def test_100g_bandwidth():
             # Receive data with memory optimization
             print(f"Allocating {data_size_gb}GB receive buffer...")
             data = np.empty(data_size_elements, dtype=np.float64)
-            # Force memory allocation to complete
-            data.flush()
+            # Force memory allocation to complete by accessing the array
+            _ = data[0]
             
             # Warm up
             comm.Recv(data[:1000], source=0, tag=999)
