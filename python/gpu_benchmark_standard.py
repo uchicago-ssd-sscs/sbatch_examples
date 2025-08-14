@@ -280,31 +280,33 @@ def print_results(system_info, matrix_results, memory_results, compute_results, 
 
 def main():
     """Main benchmark function"""
-    print("Starting GPU/CPU Benchmark Suite")
+    print("Starting Standard GPU/CPU Benchmark Suite")
     print("This will test matrix operations, memory bandwidth, and compute performance")
     print("Comparing CPU vs GPU performance using PyTorch")
+    print("Standard benchmark - compatible with most GPU systems")
     
     # Get system information
     system_info = get_system_info()
     
-    # Run benchmarks with larger matrices for better GPU demonstration
+    # Run benchmarks with conservative matrix sizes for broad compatibility
     print("\nRunning matrix operation benchmarks...")
-    matrix_results = benchmark_matrix_operations(size=8192, iterations=3)
+    matrix_results = benchmark_matrix_operations(size=4096, iterations=5)
     
     print("\nRunning memory bandwidth benchmarks...")
-    memory_results = benchmark_memory_bandwidth(size_mb=2048, iterations=20)
+    memory_results = benchmark_memory_bandwidth(size_mb=1024, iterations=50)
     
     print("\nRunning compute-intensive benchmarks...")
-    compute_results = benchmark_compute_intensive(size=2000000, iterations=200)
+    compute_results = benchmark_compute_intensive(size=1000000, iterations=500)
     
     print("\nRunning PyTorch benchmarks...")
-    torch_results = benchmark_torch_operations(size=4096, iterations=3)
+    torch_results = benchmark_torch_operations(size=2048, iterations=5)
     
     # Print results
     print_results(system_info, matrix_results, memory_results, compute_results, torch_results)
     
-    print("\nBenchmark completed successfully!")
+    print("\nStandard benchmark completed successfully!")
     print("Use these results to compare CPU vs GPU performance")
+    print("This benchmark is designed to work on most GPU systems")
 
 if __name__ == "__main__":
     main()

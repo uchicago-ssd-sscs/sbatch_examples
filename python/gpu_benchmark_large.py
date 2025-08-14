@@ -313,26 +313,27 @@ def main():
     """Main benchmark function"""
     print("Starting Large-Scale GPU/CPU Benchmark Suite")
     print("This will test large matrix operations, memory bandwidth, and compute performance")
-    print("Optimized for L40 and similar GPU hardware with memory management")
+    print("Optimized for high-end GPUs with large memory capacity (H100, A100, etc.)")
     
     # Get system information
     system_info = get_system_info()
     
-    # Run benchmarks with larger datasets
+    # Run benchmarks with large datasets for high-end GPUs
     print("\nRunning large matrix operation benchmarks...")
-    matrix_results = benchmark_large_matrix_operations(size=16384, iterations=2)
+    matrix_results = benchmark_large_matrix_operations(size=32768, iterations=2)
     
     print("\nRunning large memory bandwidth benchmarks...")
-    memory_results = benchmark_memory_bandwidth_large(size_mb=4096, iterations=10)
+    memory_results = benchmark_memory_bandwidth_large(size_mb=8192, iterations=10)
     
     print("\nRunning large compute-intensive benchmarks...")
-    compute_results = benchmark_compute_intensive_large(size=5000000, iterations=100)
+    compute_results = benchmark_compute_intensive_large(size=10000000, iterations=100)
     
     # Print results
     print_results(system_info, matrix_results, memory_results, compute_results)
     
     print("\nLarge-scale benchmark completed successfully!")
-    print("These results should show more dramatic GPU speedups for larger workloads")
+    print("These results should show dramatic GPU speedups for large workloads")
+    print("This benchmark is designed for high-end GPUs with large memory capacity")
 
 if __name__ == "__main__":
     main()

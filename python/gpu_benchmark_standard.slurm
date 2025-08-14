@@ -1,13 +1,13 @@
 #!/bin/bash
-#SBATCH --job-name=L40_Large_Benchmark
-#SBATCH --output=%j_l40_large_benchmark.out
-#SBATCH --error=%j_l40_large_benchmark.err
+#SBATCH --job-name=GPU_Benchmark
+#SBATCH --output=%j_gpu_benchmark.out
+#SBATCH --error=%j_gpu_benchmark.err
 #SBATCH --export=ALL
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=8
-#SBATCH --mem=64G
-#SBATCH --time=02:00:00
-#SBATCH --partition=L40S
+#SBATCH --mem=32G
+#SBATCH --time=01:00:00
+#SBATCH --partition=H100
 
 # Move into the directory you submitted from
 cd $SLURM_SUBMIT_DIR
@@ -15,6 +15,7 @@ cd $SLURM_SUBMIT_DIR
 # Load necessary modules (adjust based on your system)
 # module load python/anaconda3
 # module load cuda/11.8
+# module load openmpi/4.1.4
 
 # Activate conda environment from existing installation in home directory (non-interactive safe)
 if [ -f "$HOME/miniconda3/etc/profile.d/conda.sh" ]; then
@@ -24,16 +25,22 @@ else
     echo "Warning: conda.sh not found; skipping conda activation"
 fi
 
-# Set environment variables for better GPU utilization
-export CUDA_VISIBLE_DEVICES=0
-export PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:512
+# Install required packages if not already installed (optional)
+# conda install -c conda-forge numpy mpi4py pytorch psutil openmpi
+# pip install cupy-cuda12x
 
-# Run the large-scale GPU benchmark
-echo "Starting Large-Scale GPU benchmark on $(hostname)"
+# Set environment variables for better GPU utilization
+export OMPI_MCA_opal_cuda_support=true
+export CUDA_VISIBLE_DEVICES=0,1,2,3
+export OMPI_MCA_btl_openib_allow_ib=1
+export OMPI_MCA_btl_openib_if_include="mlx5_0:1"
+
+# Run the GPU benchmark
+echo "Starting GPU benchmark on $(hostname)"
+echo "$(nvidia-smi)"
 echo "SLURM_JOB_ID: $SLURM_JOB_ID"
 echo "CUDA_VISIBLE_DEVICES: $CUDA_VISIBLE_DEVICES"
 
-# Run the large-scale benchmark
-python gpu_benchmark_l40.py
-
-echo "Large-scale GPU benchmark completed"
+# Run the benchmark
+python gpu_benchmark_standard.py
+echo "Standard GPU benchmark completed" 
