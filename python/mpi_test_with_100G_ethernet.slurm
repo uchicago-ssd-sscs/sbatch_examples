@@ -39,9 +39,9 @@ export OMPI_MCA_btl_tcp_sndbuf=67108864    # 64MB send buffer for high bandwidth
 export OMPI_MCA_btl_tcp_rcvbuf=67108864    # 64MB receive buffer for high bandwidth
 export OMPI_MCA_btl_tcp_eager_limit=65536  # 64KB eager send threshold
 export OMPI_MCA_btl_tcp_rndv_eager_limit=65536  # 64KB rendezvous eager threshold
-# Force OOB (Out-of-Band) to use 100G interface by excluding others
-export OMPI_MCA_oob_tcp_if_exclude="bond0,bond2,lo"  # exclude 1G, 20G, and loopback interfaces
-export PRTE_MCA_oob_tcp_if_exclude="bond0,bond2,lo"  # PRTE OOB interface exclusion (same as above)
+# Force OOB (Out-of-Band) to use 100G interface by explicitly including only bond1
+export OMPI_MCA_oob_tcp_if_include="bond1"  # explicitly use only 100G bond1 interface
+export PRTE_MCA_oob_tcp_if_include="bond1"  # PRTE OOB interface inclusion (same as above)
 
 
 # Method 2: (UCX not available in this OpenMPI build) — do not configure UCX
@@ -50,8 +50,8 @@ unset UCX_NET_DEVICES UCX_TLS UCX_SOCKADDR_TLS_PRIORITY UCX_TCP_CM_REUSEADDR UCX
 # Method 3: Disable shared memory for cross-node communication
 export OMPI_MCA_btl_sm="^sm"  # Disable shared memory BTL for cross-node communication
 
-# Force use of only bond1 (100G) interface by excluding others
-export OMPI_MCA_btl_tcp_if_exclude="bond0,bond2,lo"  # exclude 1G, 20G, and loopback interfaces
+# Force use of only bond1 (100G) interface by explicitly including only bond1
+export OMPI_MCA_btl_tcp_if_include="bond1"  # explicitly use only 100G bond1 interface
 
 # Print network interface information
 echo "=== NETWORK INTERFACE INFORMATION ==="
@@ -130,8 +130,8 @@ mpirun -np $SLURM_NTASKS --hostfile hostfile.txt \
   --mca btl "$OMPI_MCA_btl" \
   --mca pml "$OMPI_MCA_pml" \
   --mca btl_sm "$OMPI_MCA_btl_sm" \
-  --mca oob_tcp_if_exclude "$OMPI_MCA_oob_tcp_if_exclude" \
-  --mca btl_tcp_if_exclude "$OMPI_MCA_btl_tcp_if_exclude" \
+  --mca oob_tcp_if_include "$OMPI_MCA_oob_tcp_if_include" \
+  --mca btl_tcp_if_include "$OMPI_MCA_btl_tcp_if_include" \
   --mca btl_tcp_sndbuf "$OMPI_MCA_btl_tcp_sndbuf" \
   --mca btl_tcp_rcvbuf "$OMPI_MCA_btl_tcp_rcvbuf" \
   --mca btl_tcp_eager_limit "$OMPI_MCA_btl_tcp_eager_limit" \
@@ -149,8 +149,8 @@ mpirun -np $SLURM_NTASKS --hostfile hostfile.txt \
   --mca btl "$OMPI_MCA_btl" \
   --mca pml "$OMPI_MCA_pml" \
   --mca btl_sm "$OMPI_MCA_btl_sm" \
-  --mca oob_tcp_if_exclude "$OMPI_MCA_oob_tcp_if_exclude" \
-  --mca btl_tcp_if_exclude "$OMPI_MCA_btl_tcp_if_exclude" \
+  --mca oob_tcp_if_include "$OMPI_MCA_oob_tcp_if_include" \
+  --mca btl_tcp_if_include "$OMPI_MCA_btl_tcp_if_include" \
   --mca btl_tcp_sndbuf "$OMPI_MCA_btl_tcp_sndbuf" \
   --mca btl_tcp_rcvbuf "$OMPI_MCA_btl_tcp_rcvbuf" \
   --mca btl_tcp_eager_limit "$OMPI_MCA_btl_tcp_eager_limit" \
