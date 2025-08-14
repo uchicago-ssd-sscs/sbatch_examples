@@ -35,16 +35,11 @@ echo "=== CONFIGURING MPI FOR 100 GBPS ETHERNET (bond1) ==="
 # Method 1: OpenMPI TCP configuration for Ethernet (no UCX)
 export OMPI_MCA_btl=self,tcp        # use only loopback and TCP BTLs
 export OMPI_MCA_pml=ob1             # default pml without UCX
-# Force TCP to use the 100G bond1 interface explicitly
-export OMPI_MCA_btl_tcp_if_include="bond1"
-export OMPI_MCA_oob_tcp_if_include="bond1"
 export OMPI_MCA_btl_tcp_sndbuf=67108864
 export OMPI_MCA_btl_tcp_rcvbuf=67108864
-export PRTE_MCA_oob_tcp_if_include="10.150.0.0/16"
 export OMPI_MCA_btl_tcp_eager_limit=65536
 export OMPI_MCA_btl_tcp_rndv_eager_limit=65536
-export OMPI_MCA_btl_tcp_rcvbuf=2097152
-export OMPI_MCA_btl_tcp_sndbuf=2097152
+
 
 # Method 2: (UCX not available in this OpenMPI build) — do not configure UCX
 unset UCX_NET_DEVICES UCX_TLS UCX_SOCKADDR_TLS_PRIORITY UCX_TCP_CM_REUSEADDR UCX_TCP_MAX_RETRIES UCX_VERBOSE
@@ -74,8 +69,6 @@ ip link show | grep ib || echo "No InfiniBand interfaces found"
 
 echo "=== MPI CONFIGURATION ==="
 echo "OMPI_MCA_btl: $OMPI_MCA_btl"
-echo "OMPI_MCA_btl_tcp_if_include: ${OMPI_MCA_btl_tcp_if_include}"
-echo "OMPI_MCA_oob_tcp_if_include: ${OMPI_MCA_oob_tcp_if_include}"
 echo "OMPI_MCA_btl_tcp_sndbuf: ${OMPI_MCA_btl_tcp_sndbuf}"
 echo "OMPI_MCA_btl_tcp_rcvbuf: ${OMPI_MCA_btl_tcp_rcvbuf}"
 
@@ -129,15 +122,11 @@ mpirun -np $SLURM_NTASKS --hostfile hostfile.txt \
   --prtemca oob_tcp_if_include 10.150.0.0/16 \
   --mca pml ob1 \
   --mca btl self,tcp \
-  --mca oob_tcp_if_include bond1 \
-  --mca btl_tcp_if_include bond1 \
-  --mca btl_tcp_if_exclude bond0,bond2 \
   --mca btl_tcp_sndbuf 67108864 \
   --mca btl_tcp_rcvbuf 67108864 \
   --mca btl_base_verbose 100 \
   --mca oob_base_verbose 100 \
   -x OMPI_MCA_btl -x OMPI_MCA_pml \
-  -x OMPI_MCA_btl_tcp_if_include -x OMPI_MCA_oob_tcp_if_include \
   python mpi_test.py
 
 echo "MPI test completed"
@@ -149,15 +138,11 @@ mpirun -np $SLURM_NTASKS --hostfile hostfile.txt \
   --prtemca oob_tcp_if_include 10.150.0.0/16 \
   --mca pml ob1 \
   --mca btl self,tcp \
-  --mca oob_tcp_if_include bond1 \
-  --mca btl_tcp_if_include bond1 \
-  --mca btl_tcp_if_exclude bond0,bond2 \
   --mca btl_tcp_sndbuf 67108864 \
   --mca btl_tcp_rcvbuf 67108864 \
   --mca btl_base_verbose 100 \
   --mca oob_base_verbose 100 \
   -x OMPI_MCA_btl -x OMPI_MCA_pml \
-  -x OMPI_MCA_btl_tcp_if_include -x OMPI_MCA_oob_tcp_if_include \
   python network_bandwidth_test_v2.py
 
 echo "Network bandwidth test completed"
