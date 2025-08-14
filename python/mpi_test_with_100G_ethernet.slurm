@@ -51,6 +51,10 @@ unset UCX_NET_DEVICES UCX_TLS UCX_SOCKADDR_TLS_PRIORITY UCX_TCP_CM_REUSEADDR UCX
 export OMPI_MCA_btl_sm="^sm"  # Disable shared memory BTL for cross-node communication
 
 # Force use of only bond1 (100G) interface by explicitly including only bond1
+# First unset any conflicting exclude settings
+unset OMPI_MCA_btl_tcp_if_exclude
+unset OMPI_MCA_oob_tcp_if_exclude
+# Then set the include settings
 export OMPI_MCA_btl_tcp_if_include="bond1"  # explicitly use only 100G bond1 interface
 
 # Print network interface information
@@ -77,6 +81,10 @@ echo "=== MPI CONFIGURATION ==="
 echo "OMPI_MCA_btl: $OMPI_MCA_btl"
 echo "OMPI_MCA_btl_tcp_sndbuf: ${OMPI_MCA_btl_tcp_sndbuf}"
 echo "OMPI_MCA_btl_tcp_rcvbuf: ${OMPI_MCA_btl_tcp_rcvbuf}"
+echo "OMPI_MCA_btl_tcp_if_include: '${OMPI_MCA_btl_tcp_if_include}'"
+echo "OMPI_MCA_btl_tcp_if_exclude: '${OMPI_MCA_btl_tcp_if_exclude}'"
+echo "OMPI_MCA_oob_tcp_if_include: '${OMPI_MCA_oob_tcp_if_include}'"
+echo "OMPI_MCA_oob_tcp_if_exclude: '${OMPI_MCA_oob_tcp_if_exclude}'"
 
 echo "=== Kernel TCP buffer limits (diagnostic) ==="
 sysctl -n net.core.rmem_max 2>/dev/null | sed 's/^/net.core.rmem_max=/' || echo "net.core.rmem_max: unknown"
