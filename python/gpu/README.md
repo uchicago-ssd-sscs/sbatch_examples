@@ -24,6 +24,7 @@ This directory contains GPU benchmarking and demonstration scripts for various G
 - **Massive Matrix Operations**: Tests matrices up to 32,768×32,768
 - **Memory Bandwidth**: Demonstrates 16GB memory transfers
 - **Parallel Processing**: Processes 100 million elements in parallel
+- **Monte Carlo Econometrics**: Asset pricing simulations and bootstrap methods
 - **Multi-GPU Sync**: Tests multi-GPU synchronization (if available)
 - **Real-time Monitoring**: Optional live GPU utilization display
 
@@ -31,6 +32,8 @@ This directory contains GPU benchmarking and demonstration scripts for various G
 - Matrix operations: 10-50 TFLOPS
 - Memory bandwidth: 3-4 TB/s
 - Speedup vs CPU: 50-100x on large workloads
+- Monte Carlo simulations: 100K asset price paths in seconds
+- Bootstrap methods: 10K regression resamples for robust inference
 
 ## 📊 GPU Benchmarking Scripts
 

@@ -75,6 +75,7 @@ sbatch gpu_benchmark_l40.slurm
 - Matrix operations up to 32,768×32,768
 - Memory transfers up to 16GB
 - Parallel processing of 100 million elements
+- Monte Carlo econometrics (asset pricing, bootstrap methods)
 - Multi-GPU synchronization (if available)
 - Real-time performance metrics
 
