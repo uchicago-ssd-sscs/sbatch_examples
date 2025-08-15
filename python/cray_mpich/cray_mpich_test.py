@@ -231,7 +231,11 @@ def main():
         print(f"Hostname: {hostname}")
         print()
     
-    # Run all tests
+    # Run bandwidth test FIRST (like OpenMPI) to ensure it completes before timeout
+    test_cray_mpich_bandwidth()
+    comm.Barrier()
+    
+    # Run other tests after bandwidth test
     check_cray_mpich_environment()
     comm.Barrier()
     
@@ -245,9 +249,6 @@ def main():
     comm.Barrier()
     
     test_cray_mpich_communication()
-    comm.Barrier()
-    
-    test_cray_mpich_bandwidth()
     comm.Barrier()
     
     if rank == 0:

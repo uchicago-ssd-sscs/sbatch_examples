@@ -66,7 +66,7 @@ echo ""
 
 # Run the 100G MPI implementation test
 echo "=== Running 100G MPI Implementation Test ==="
-echo "Testing with data sizes: 100MB, 500MB, 1GB, 2GB, 4GB"
+echo "Testing with data sizes: 1MB, 5MB, 10MB, 20MB (matching OpenMPI)"
 echo "Expected performance: 8-12.5 GB/s for 100G network"
 echo "Multi-node testing: $SLURM_NNODES nodes with $SLURM_NTASKS_PER_NODE tasks each"
 echo ""

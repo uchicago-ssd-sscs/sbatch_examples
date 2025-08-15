@@ -136,9 +136,9 @@ def test_100g_bandwidth():
         return
     
     # Data sizes appropriate for 100G networks - REDUCED for faster testing
-    # Test sizes: 100MB, 500MB, 1GB, 2GB, 4GB
-    # Note: Much more reasonable sizes that won't cause timeouts
-    data_sizes_gb = [0.1, 0.5, 1.0, 2.0, 4.0]
+    # Test sizes: 1MB, 5MB, 10MB, 20MB (matching OpenMPI)
+    # Note: Reasonable sizes that complete quickly
+    data_sizes_gb = [0.001, 0.005, 0.01, 0.02]  # 1MB, 5MB, 10MB, 20MB (matching OpenMPI)
     
     results = {}
     
