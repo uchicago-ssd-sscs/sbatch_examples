@@ -51,6 +51,17 @@ conda env create -f environment.yml -n openmpi
 conda activate openmpi
 ```
 
+**Note**: If you already have the environment created, you may need to update it with the latest packages:
+
+```bash
+# Update existing environment
+conda env update -f environment.yml -n openmpi
+
+# Or recreate the environment if there are conflicts
+conda env remove -n openmpi
+conda env create -f environment.yml -n openmpi
+```
+
 ### **Step 3: Run Network Tests**
 
 Choose the appropriate test for your needs:
