@@ -20,7 +20,6 @@ def check_cray_mpich_environment():
     rank = comm.Get_rank()
     
     if rank == 0:
-        print("=== Cray MPICH Environment Check ===")
         print(f"MPI Library: {MPI.Get_library_version()}")
         print(f"MPI Version: {MPI.Get_version()}")
         
@@ -47,7 +46,6 @@ def test_cray_mpich_features():
     size = comm.Get_size()
     
     if rank == 0:
-        print("=== Cray MPICH Features Test ===")
         print(f"MPI Version: {MPI.Get_version()}")
         print(f"Communicator size: {size}")
         print(f"Available constants: MPI_SUM={MPI.SUM}, MPI_MAX={MPI.MAX}")
@@ -60,11 +58,10 @@ def test_cray_mpich_performance():
     rank = comm.Get_rank()
     size = comm.Get_size()
     
-    if rank == 0:
-        print("=== Cray MPICH Performance Tests ===")
+
     
     # Test 1: Barrier timing
-    iterations = 20  # Reduced from 100
+    iterations = 10  # Match OpenMPI
     comm.Barrier()
     start_time = MPI.Wtime()
     for _ in range(iterations):
@@ -77,7 +74,7 @@ def test_cray_mpich_performance():
     
     # Test 2: Point-to-point latency
     if size >= 2:
-        iterations = 100  # Reduced from 1000
+        iterations = 10  # Reduced from 100
         if rank == 0:
             data = np.array([1.0], dtype=np.float64)
             start_time = MPI.Wtime()
@@ -114,8 +111,7 @@ def test_cray_mpich_collectives():
     rank = comm.Get_rank()
     size = comm.Get_size()
     
-    if rank == 0:
-        print("=== Cray MPICH Collective Operations Test ===")
+
     
     # Test broadcast
     if rank == 0:
@@ -152,8 +148,7 @@ def test_cray_mpich_communication():
     rank = comm.Get_rank()
     size = comm.Get_size()
     
-    if rank == 0:
-        print("=== Cray MPICH Communication Test ===")
+
     
     # Test simple send/receive
     if size >= 2:
@@ -186,9 +181,6 @@ def test_cray_mpich_bandwidth():
     
     if size < 2:
         return
-    
-    if rank == 0:
-        print("=== Cray MPICH Bandwidth Test ===")
     
     # Test with different data sizes
     for data_size_mb in [1, 5, 10, 20]:  # 1MB, 5MB, 10MB, 20MB
@@ -224,12 +216,7 @@ def main():
     size = comm.Get_size()
     hostname = platform.node()
     
-    if rank == 0:
-        print("=== Cray MPICH Python Test Suite ===")
-        print(f"MPI Implementation: {MPI.Get_library_version()}")
-        print(f"Running on {size} processes")
-        print(f"Hostname: {hostname}")
-        print()
+
     
     # Run bandwidth test FIRST (like OpenMPI) to ensure it completes before timeout
     test_cray_mpich_bandwidth()
@@ -251,11 +238,7 @@ def main():
     test_cray_mpich_communication()
     comm.Barrier()
     
-    if rank == 0:
-        print("\n=== Test Summary ===")
-        print("The test shows Cray MPICH implementation details and performance metrics.")
-        print("Make sure you have loaded the appropriate Cray MPICH modules.")
-        print("\n✅ Cray MPICH implementation tests completed!")
+
     
     MPI.Finalize()
 

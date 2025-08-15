@@ -54,7 +54,7 @@ cat hostfile.txt
 # Test OpenMPI functionality and performance
 echo "=== RUNNING OPENMPI FUNCTIONALITY TEST ==="
 echo "Testing OpenMPI features, performance, and collectives..."
-mpirun -np 10 --hostfile hostfile.txt --bind-to none \
+mpirun -np $SLURM_NTASKS --hostfile hostfile.txt --bind-to none \
   --mca oob_tcp_if_include "$OMPI_MCA_oob_tcp_if_include" \
   --mca btl_tcp_if_include "$OMPI_MCA_btl_tcp_if_include" \
   python mpi_test.py
@@ -64,7 +64,7 @@ echo "OpenMPI functionality test completed"
 echo ""
 echo "=== RUNNING OPENMPI NETWORK PERFORMANCE TEST ==="
 echo "Testing OpenMPI network bandwidth, latency, and topology..."
-mpirun -np 10 --hostfile hostfile.txt --bind-to none \
+mpirun -np $SLURM_NTASKS --hostfile hostfile.txt --bind-to none \
   --mca oob_tcp_if_include "$OMPI_MCA_oob_tcp_if_include" \
   --mca btl_tcp_if_include "$OMPI_MCA_btl_tcp_if_include" \
   python network_bandwidth_test_v2.py

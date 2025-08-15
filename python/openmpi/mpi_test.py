@@ -21,8 +21,6 @@ def check_openmpi_environment():
     rank = comm.Get_rank()
     
     if rank == 0:
-        print("=== OpenMPI Environment Check ===")
-        
         # Check MPI library version
         mpi_lib = MPI.Get_library_version()
         print(f"MPI Library: {mpi_lib}")
@@ -62,8 +60,7 @@ def test_openmpi_features():
     rank = comm.Get_rank()
     size = comm.Get_size()
     
-    if rank == 0:
-        print("=== OpenMPI Feature Tests ===")
+
     
     # Test 1: Check MPI version and features
     mpi_version = MPI.Get_version()
@@ -107,8 +104,7 @@ def test_openmpi_performance():
     rank = comm.Get_rank()
     size = comm.Get_size()
     
-    if rank == 0:
-        print("=== OpenMPI Performance Tests ===")
+
     
     # Test 1: Barrier timing
     comm.Barrier()
@@ -122,7 +118,7 @@ def test_openmpi_performance():
     
     # Test 2: Point-to-point latency
     if size >= 2:
-        iterations = 100  # Reduced from 1000
+        iterations = 10  # Reduced from 100
         if rank == 0:
             # Send small messages to measure latency
             start_time = MPI.Wtime()
@@ -166,8 +162,7 @@ def test_openmpi_collectives():
     rank = comm.Get_rank()
     size = comm.Get_size()
     
-    if rank == 0:
-        print("=== OpenMPI Collective Tests ===")
+
     
     # Test 1: Broadcast
     if rank == 0:
@@ -216,8 +211,7 @@ def test_openmpi_communication():
     rank = comm.Get_rank()
     size = comm.Get_size()
     
-    if rank == 0:
-        print("=== OpenMPI Communication Tests ===")
+
     
     if size < 2:
         if rank == 0:
@@ -253,8 +247,7 @@ def test_openmpi_bandwidth():
     rank = comm.Get_rank()
     size = comm.Get_size()
     
-    if rank == 0:
-        print("=== OpenMPI Bandwidth Tests ===")
+
     
     if size < 2:
         if rank == 0:
@@ -293,13 +286,7 @@ def main():
     size = comm.Get_size()
     hostname = platform.node()
     
-    if rank == 0:
-        print("=== OpenMPI Python Test Suite ===")
-        print(f"MPI Implementation: {MPI.Get_library_version()}")
-        print(f"MPI Version: {MPI.Get_version()}")
-        print(f"Running on {size} processes")
-        print(f"Hostname: {hostname}")
-        print()
+
     
     # Run all tests
     check_openmpi_environment()
@@ -320,11 +307,7 @@ def main():
     test_openmpi_bandwidth()
     comm.Barrier()
     
-    if rank == 0:
-        print("\n=== Test Summary ===")
-        print("The test shows OpenMPI implementation details and performance metrics.")
-        print("Make sure you have loaded the appropriate OpenMPI modules or conda environment.")
-        print("\n✅ OpenMPI implementation tests completed!")
+
     
     MPI.Finalize()
 

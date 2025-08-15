@@ -107,7 +107,7 @@ def test_bidirectional_bandwidth(comm, rank, size, data_size_mb=2048, iterations
         
         print(f"Bidirectional {data_size_mb}MB: {bidir_bandwidth:.2f} GB/s")
 
-def test_latency(comm, rank, size, iterations=10000):
+def test_latency(comm, rank, size, iterations=10):
     """Test network latency with small messages"""
     
     if size < 2:
@@ -149,7 +149,7 @@ def test_different_message_sizes(comm, rank, size):
     
     for msg_size in message_sizes:
         data_size = msg_size // 8  # float64 = 8 bytes
-        iterations = max(1, 1000000 // msg_size)  # Adjust iterations based on size
+        iterations = 1  # Single iteration for quick testing
         
         if rank == 0:
             data = np.random.random(data_size).astype(np.float64)
@@ -210,12 +210,7 @@ def main():
     size = comm.Get_size()
     hostname = platform.node()
     
-    if rank == 0:
-        print("=== OpenMPI Network Performance Test Suite ===")
-        print(f"MPI Implementation: {MPI.Get_library_version()}")
-        print(f"Running on {size} processes")
-        print(f"Hostname: {hostname}")
-        print()
+
     
     # Run all network tests (matching Cray MPICH parameters)
     test_network_bandwidth(comm, rank, size, data_size_mb=1, iterations=1)  # 1MB test
@@ -233,7 +228,7 @@ def main():
     test_bidirectional_bandwidth(comm, rank, size, data_size_mb=20, iterations=1)  # 20MB test
     comm.Barrier()
     
-    test_latency(comm, rank, size, iterations=100)  # Reduced from 1000
+    test_latency(comm, rank, size, iterations=10)  # Reduced from 100
     comm.Barrier()
     
     test_different_message_sizes(comm, rank, size)
@@ -242,15 +237,7 @@ def main():
     test_network_topology(comm, rank, size)
     comm.Barrier()
     
-    if rank == 0:
-        print("\n=== Network Test Summary ===")
-        print("The test shows OpenMPI network performance metrics including:")
-        print("- Unidirectional bandwidth (GB/s)")
-        print("- Bidirectional bandwidth (GB/s)")
-        print("- Network latency (microseconds)")
-        print("- Performance with different message sizes")
-        print("- Network topology information")
-        print("\n✅ OpenMPI network performance tests completed!")
+
     
     MPI.Finalize()
 

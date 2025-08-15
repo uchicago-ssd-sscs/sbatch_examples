@@ -4,7 +4,8 @@
 #SBATCH --error=%j_cray_mpich_test.err
 #SBATCH --time=00:30:00
 #SBATCH --nodes=2
-#SBATCH --ntasks-per-node=2
+#SBATCH --ntasks=2
+#SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=64G
 #SBATCH --exclusive
