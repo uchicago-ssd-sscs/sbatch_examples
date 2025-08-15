@@ -7,14 +7,19 @@
 #SBATCH --ntasks-per-node=2
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=64G
+#SBATCH --exclusive
 #SBATCH --export=ALL
+#SBATCH --hint=nomultithread
+#SBATCH --distribution=block
 
-echo "=== Cray MPICH Python Test ==="
+echo "=== Cray MPICH Python Test (Exclusive Node Allocation) ==="
 echo "Job ID: $SLURM_JOB_ID"
 echo "Nodes: $SLURM_NNODES"
 echo "Tasks per node: $SLURM_NTASKS_PER_NODE"
 echo "Total tasks: $SLURM_NTASKS"
 echo "Working directory: $SLURM_SUBMIT_DIR"
+echo "Exclusive allocation: YES (no interference from other jobs)"
+echo "Node list: $SLURM_NODELIST"
 echo ""
 
 # Load MPI modules (choose one based on your system)

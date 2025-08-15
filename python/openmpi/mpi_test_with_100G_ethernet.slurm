@@ -10,6 +10,9 @@
 #SBATCH --time=00:30:00
 #SBATCH --partition=CPU
 #SBATCH --nodes=2
+#SBATCH --exclusive
+#SBATCH --hint=nomultithread
+#SBATCH --distribution=block
 
 # Move into the directory you submitted from
 cd $SLURM_SUBMIT_DIR
@@ -23,11 +26,14 @@ else
 fi
 
 # Print SLURM environment
+echo "=== OpenMPI 100G Ethernet Test (Exclusive Node Allocation) ==="
 echo "SLURM_JOB_ID: $SLURM_JOB_ID"
 echo "SLURM_NTASKS: $SLURM_NTASKS"
 echo "SLURM_NTASKS_PER_NODE: $SLURM_NTASKS_PER_NODE"
 echo "SLURM_NODELIST: $SLURM_NODELIST"
 echo "SLURM_JOB_NODELIST: $SLURM_JOB_NODELIST"
+echo "Exclusive allocation: YES (no interference from other jobs)"
+echo ""
 
 # Configure MPI to use 100 Gbps Ethernet bond1 interface
 echo "=== CONFIGURING MPI FOR 100 GBPS ETHERNET (bond1) ==="
