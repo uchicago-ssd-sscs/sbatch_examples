@@ -68,26 +68,17 @@ echo ""
 # Test MPI
 echo "Testing MPI multi-node communication..."
 
-# Create hostfile for mpirun
-echo "Creating hostfile..."
-# Expand SLURM node list and create proper hostfile
-scontrol show hostnames $SLURM_JOB_NODELIST > hostfile.txt
-echo "Hostfile contents:"
-cat hostfile.txt
-
 # Test Cray MPICH functionality and performance
 echo "=== RUNNING CRAY MPICH FUNCTIONALITY TEST ==="
 echo "Testing Cray MPICH features, performance, and collectives..."
-mpirun -np $SLURM_NTASKS --hostfile hostfile.txt --bind-to none \
-  python mpi_test.py
+mpirun -np $SLURM_NTASKS python mpi_test.py
 
 echo "Cray MPICH functionality test completed"
 
 echo ""
 echo "=== RUNNING CRAY MPICH NETWORK PERFORMANCE TEST ==="
 echo "Testing Cray MPICH network bandwidth, latency, and topology..."
-mpirun -np $SLURM_NTASKS --hostfile hostfile.txt --bind-to none \
-  python network_bandwidth_test_v2.py
+mpirun -np $SLURM_NTASKS python network_bandwidth_test_v2.py
 
 echo "Cray MPICH network performance test completed"
 
