@@ -218,6 +218,7 @@ sbatch_examples/
 - **Stata**: Array job example (`stata/`)
 
 ### GPU Examples
+- **H100 Interactive Demo**: Interactive H100 GPU demonstration (`python/gpu/h100_demo.sh`)
 - **Standard GPU Benchmark**: Conservative GPU performance testing for most systems (`python/gpu_benchmark_standard.py`)
 - **Large-Scale GPU Benchmark**: High-performance GPU testing for H100/A100 systems (`python/gpu_benchmark_large.py`)
 - **Multi-GPU Benchmarking**: GPU performance testing (`python/gpu_benchmark_multi_gpu.py`)

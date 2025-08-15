@@ -36,6 +36,9 @@ conda activate gpu
 Choose the appropriate benchmark for your needs:
 
 ```bash
+# H100 Interactive Demo (runs interactively on H100 partition)
+./gpu/h100_demo.sh
+
 # Single GPU benchmark
 sbatch gpu_benchmark.slurm
 
@@ -52,6 +55,28 @@ sbatch gpu_benchmark_l40.slurm
 ## 📋 Script Descriptions
 
 ### Core Benchmark Scripts
+
+#### `h100_demo.py` & `h100_demo.sh`
+**Purpose**: Interactive H100 GPU demonstration and performance showcase
+- **Interactive Session**: Launches interactive SLURM session on H100 partition
+- **Massive Matrix Operations**: Demonstrates H100's computational power with large matrices
+- **Memory Bandwidth**: Shows H100's high memory bandwidth capabilities
+- **Parallel Processing**: Demonstrates massive parallel processing capabilities
+- **Real-time Monitoring**: Optional real-time GPU utilization monitoring
+- **No MPI Required**: Single-node demonstration focused on H100 capabilities
+
+**Usage**:
+```bash
+# Run interactive H100 demo
+./gpu/h100_demo.sh
+```
+
+**Features**:
+- Matrix operations up to 32,768×32,768
+- Memory transfers up to 16GB
+- Parallel processing of 100 million elements
+- Multi-GPU synchronization (if available)
+- Real-time performance metrics
 
 #### `gpu_benchmark.py`
 **Purpose**: Basic GPU/CPU performance comparison on a single node
