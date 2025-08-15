@@ -77,6 +77,7 @@ dependencies:
   - sleef=3.8=h1b44611_0
   - sqlite=3.50.2=hb25bd0a_1
   - tk=8.6.14=h993c535_1
+  - tmux=3.3a=h5eee18b_1
   - typing_extensions=4.14.1=pyhe01879c_0
   - tzdata=2025b=h04d1e81_0
   - wheel=0.45.1=py312h06a4308_0

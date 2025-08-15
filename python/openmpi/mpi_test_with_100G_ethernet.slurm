@@ -17,7 +17,7 @@ cd $SLURM_SUBMIT_DIR
 # Activate conda environment (non-interactive safe)
 if [ -f "$HOME/miniconda3/etc/profile.d/conda.sh" ]; then
     source "$HOME/miniconda3/etc/profile.d/conda.sh"
-    conda activate gpu || echo "Warning: could not activate conda env 'gpu'"
+    conda activate openmpi || echo "Warning: could not activate conda env 'openmpi'"
 else
     echo "Warning: conda.sh not found; skipping conda activation"
 fi
