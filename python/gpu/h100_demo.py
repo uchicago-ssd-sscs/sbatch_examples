@@ -129,7 +129,7 @@ def run_gpu_monte_carlo():
     print("   Simulating: Asset Pricing Models, VAR Analysis, and Bootstrap Methods")
     
     # Monte Carlo parameters
-    n_simulations = [10000, 50000, 100000]
+    n_simulations = [10000, 50000, 75000]  # Reduced from 100000 to prevent memory issues
     n_assets = 100
     n_time_periods = 252  # One trading year
     
@@ -147,10 +147,28 @@ def run_gpu_monte_carlo():
         gpu_returns = torch.normal(0.0001, 0.02, (n_sim, n_assets, n_time_periods), device='cuda')
         gpu_prices = torch.cumprod(1 + gpu_returns, dim=2)
         
+        # Clear intermediate tensors to save memory
+        del gpu_returns
+        torch.cuda.empty_cache()
+        
         # Calculate portfolio statistics on GPU
         gpu_portfolio_values = torch.sum(gpu_prices, dim=1)
-        gpu_var_95 = torch.quantile(gpu_portfolio_values, 0.05)
+        
+        # Use a more memory-efficient approach for large tensors
+        if n_sim > 50000:
+            # For very large tensors, sample for quantile calculation
+            sample_size = min(50000, n_sim)
+            sample_indices = torch.randint(0, n_sim, (sample_size,), device='cuda')
+            sample_values = gpu_portfolio_values[sample_indices]
+            gpu_var_95 = torch.quantile(sample_values, 0.05)
+        else:
+            gpu_var_95 = torch.quantile(gpu_portfolio_values, 0.05)
+        
         gpu_expected_return = torch.mean(gpu_portfolio_values)
+        
+        # Clear large tensors to save memory
+        del gpu_prices, gpu_portfolio_values
+        torch.cuda.empty_cache()
         
         torch.cuda.synchronize()
         gpu_time = time.time() - start
@@ -159,8 +177,8 @@ def run_gpu_monte_carlo():
         
         print(f"   ✅ GPU: {gpu_time:.2f}s (VaR: ${gpu_var_95:.2f}, E[R]: {gpu_expected_return:.4f})")
         
-        if n_sim == 100000:
-            print(f"   🏆 H100 completed 100K Monte Carlo simulations in {gpu_time:.2f} seconds!")
+        if n_sim == 75000:
+            print(f"   🏆 H100 completed 75K Monte Carlo simulations in {gpu_time:.2f} seconds!")
             print(f"   🏆 That's {n_sim * n_assets * n_time_periods / gpu_time / 1e6:.1f}M calculations per second!")
     
     # Bootstrap Confidence Intervals Demo
@@ -521,7 +539,7 @@ def run_cpu_monte_carlo():
     print("\n📊 CPU: Large-Scale Monte Carlo Studies for Economics Research")
     
     # Monte Carlo parameters
-    n_simulations = [10000, 50000, 100000]
+    n_simulations = [10000, 50000, 75000]  # Reduced from 100000 to prevent memory issues
     n_assets = 100
     n_time_periods = 252  # One trading year
     
@@ -540,7 +558,17 @@ def run_cpu_monte_carlo():
         
         # Calculate portfolio statistics
         cpu_portfolio_values = np.sum(cpu_prices, axis=1)
-        cpu_var_95 = np.percentile(cpu_portfolio_values, 5)
+        
+        # Use a more memory-efficient approach for large arrays
+        if n_sim > 50000:
+            # For very large arrays, sample for percentile calculation
+            sample_size = min(50000, n_sim)
+            sample_indices = np.random.choice(n_sim, sample_size, replace=False)
+            sample_values = cpu_portfolio_values[sample_indices]
+            cpu_var_95 = np.percentile(sample_values, 5)
+        else:
+            cpu_var_95 = np.percentile(cpu_portfolio_values, 5)
+        
         cpu_expected_return = np.mean(cpu_portfolio_values)
         
         cpu_time = time.time() - start
@@ -797,7 +825,7 @@ def print_comprehensive_summary():
     
     # Monte Carlo
     print("\n🔥 MONTE CARLO ECONOMETRICS:")
-    for n_sim in [10000, 50000, 100000]:
+    for n_sim in [10000, 50000, 75000]:
         gpu_time = gpu_times.get(f'monte_carlo_{n_sim}', 0)
         cpu_time = cpu_times.get(f'monte_carlo_{n_sim}', 0)
         if gpu_time > 0 and cpu_time > 0:
