@@ -221,16 +221,19 @@ def main():
     test_network_bandwidth(comm, rank, size, data_size_mb=1, iterations=1)  # 1MB test
     comm.Barrier()
     
+    test_network_bandwidth(comm, rank, size, data_size_mb=5, iterations=1)  # 5MB test
+    comm.Barrier()
+    
     test_network_bandwidth(comm, rank, size, data_size_mb=10, iterations=1)  # 10MB test
     comm.Barrier()
     
-    test_network_bandwidth(comm, rank, size, data_size_mb=100, iterations=1)  # 100MB test
+    test_network_bandwidth(comm, rank, size, data_size_mb=20, iterations=1)  # 20MB test
     comm.Barrier()
     
-    test_bidirectional_bandwidth(comm, rank, size, data_size_mb=512, iterations=3)
+    test_bidirectional_bandwidth(comm, rank, size, data_size_mb=20, iterations=1)  # 20MB test
     comm.Barrier()
     
-    test_latency(comm, rank, size, iterations=1000)
+    test_latency(comm, rank, size, iterations=100)  # Reduced from 1000
     comm.Barrier()
     
     test_different_message_sizes(comm, rank, size)

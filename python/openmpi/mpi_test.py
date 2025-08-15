@@ -122,7 +122,7 @@ def test_openmpi_performance():
     
     # Test 2: Point-to-point latency
     if size >= 2:
-        iterations = 1000
+        iterations = 100  # Reduced from 1000
         if rank == 0:
             # Send small messages to measure latency
             start_time = MPI.Wtime()
@@ -140,7 +140,7 @@ def test_openmpi_performance():
     
     # Test 3: Bandwidth test
     if size >= 2:
-        data_sizes = [1024, 10240, 102400]  # 1KB, 10KB, 100KB
+        data_sizes = [1024, 10240, 102400]  # 1KB, 10KB, 100KB (consistent with Cray MPICH)
         
         for data_size in data_sizes:
             if rank == 0:

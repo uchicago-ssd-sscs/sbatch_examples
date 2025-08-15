@@ -73,7 +73,8 @@ echo ""
 mpirun -np $SLURM_NTASKS python mpi_implementation_test.py
 
 echo ""
-echo "=== Running Basic MPI Test ==="
+echo "=== Running Cray MPICH Comprehensive Test ==="
+echo "Testing Cray MPICH features, performance, and collectives..."
 mpirun -np $SLURM_NTASKS python cray_mpich_test.py
 
 echo ""
