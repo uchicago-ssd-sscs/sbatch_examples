@@ -1,12 +1,12 @@
 #!/bin/bash
-#SBATCH --job-name=MPI_Test_IB_Config
-#SBATCH --output=%j_mpi_test_ib.out
-#SBATCH --error=%j_mpi_test_ib.err
+#SBATCH --job-name=MPI_Test_100G_Config
+#SBATCH --output=%j_mpi_test_100G.out
+#SBATCH --error=%j_mpi_test_100G.err
 #SBATCH --export=ALL
 #SBATCH --ntasks=2
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=1
-#SBATCH --mem=1G
+#SBATCH --mem=16G
 #SBATCH --time=00:05:00
 #SBATCH --partition=CPU
 #SBATCH --nodes=2
@@ -132,7 +132,7 @@ fi
 # Test MPI with 100 Gbps Ethernet configuration
 echo "Testing MPI with 100 Gbps Ethernet configuration..."
 echo "Launching $SLURM_NTASKS MPI processes across $SLURM_NNODES nodes..."
-mpirun -np $SLURM_NTASKS --hostfile hostfile.txt \
+mpirun -np $SLURM_NTASKS --hostfile hostfile.txt --bind-to none \
   --mca btl_base_verbose 100 \
   --mca oob_base_verbose 100 \
   --mca btl "$OMPI_MCA_btl" \
@@ -151,7 +151,7 @@ echo "MPI test completed"
 echo ""
 echo "=== RUNNING NETWORK BANDWIDTH TEST WITH 100 GBPS ETHERNET ==="
 echo "Testing actual cross-node network performance with 100 Gbps Ethernet..."
-mpirun -np $SLURM_NTASKS --hostfile hostfile.txt \
+mpirun -np $SLURM_NTASKS --hostfile hostfile.txt --bind-to none \
   --mca btl_base_verbose 100 \
   --mca oob_base_verbose 100 \
   --mca btl "$OMPI_MCA_btl" \

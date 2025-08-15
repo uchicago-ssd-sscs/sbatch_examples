@@ -3,13 +3,13 @@
 #SBATCH --output=%j_mpi_test.out
 #SBATCH --error=%j_mpi_test.err
 #SBATCH --export=ALL
-#SBATCH --ntasks=50
-#SBATCH --ntasks-per-node=10
+#SBATCH --ntasks=2
+#SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=1
-#SBATCH --mem=1G
+#SBATCH --mem=16G
 #SBATCH --time=00:05:00
 #SBATCH --partition=CPU
-#SBATCH --nodes=5
+#SBATCH --nodes=2
 
 # Move into the directory you submitted from
 cd $SLURM_SUBMIT_DIR
@@ -41,15 +41,15 @@ cat hostfile.txt
 
 # Test MPI with proper hostfile
 echo "Testing MPI with expanded hostfile..."
-echo "Launching 50 MPI processes across 5 nodes..."
-mpirun -np 50 --hostfile hostfile.txt python mpi_test.py
+echo "Launching 10 MPI processes across 5 nodes..."
+mpirun -np 10 --hostfile hostfile.txt --bind-to none python mpi_test.py
 
 echo "MPI test completed"
 
 echo ""
 echo "=== RUNNING NETWORK BANDWIDTH TEST ==="
 echo "Testing actual cross-node network performance..."
-mpirun -np 50 --hostfile hostfile.txt python network_bandwidth_test_v2.py
+mpirun -np 10 --hostfile hostfile.txt --bind-to none python network_bandwidth_test_v2.py
 
 echo "Network bandwidth test completed"
 
