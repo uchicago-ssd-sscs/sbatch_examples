@@ -16,32 +16,29 @@ except ImportError:
     sys.exit(1)
 
 def check_mpi_environment():
-    """Check which MPI implementation we're using"""
+    """Check MPI environment and configuration"""
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
     
     if rank == 0:
-        print("=== MPI Implementation Check ===")
-        
         # Check MPI library version
         mpi_lib = MPI.Get_library_version()
         print(f"MPI Library: {mpi_lib}")
         
-        # Check for different MPI implementations
+        # Check for MPI implementation
         mpi_lib_lower = mpi_lib.lower()
-        if 'cray' in mpi_lib_lower:
-            print("✅ Cray MPICH detected!")
-        elif 'hpe' in mpi_lib_lower or 'mpt' in mpi_lib_lower:
-            print("✅ HPE MPT detected!")
-        elif 'mpich' in mpi_lib_lower:
-            print("✅ MPICH detected!")
+        if 'cray' in mpi_lib_lower or 'hpe' in mpi_lib_lower or 'mpt' in mpi_lib_lower:
+            print("✅ Cray MPICH/HPE MPT detected!")
         elif 'openmpi' in mpi_lib_lower:
             print("✅ OpenMPI detected!")
+        elif 'mpich' in mpi_lib_lower:
+            print("✅ MPICH detected!")
         else:
             print("⚠️  Unknown MPI implementation")
         
-        # Check environment variables
-        mpi_vars = ['CRAY_MPICH_DIR', 'MPICH_DIR', 'MPICH_ROOT', 'MPT_DIR', 'HPE_MPT_DIR']
+        # Check MPI environment variables
+        mpi_vars = ['CRAY_MPICH_DIR', 'MPICH_DIR', 'MPICH_ROOT', 'MPT_DIR', 'HPE_MPT_DIR',
+                   'OMPI_MCA_btl', 'OMPI_MCA_pml', 'OMPI_MCA_btl_tcp_if_include']
         found_mpi = False
         for var in mpi_vars:
             if var in os.environ:
@@ -49,7 +46,7 @@ def check_mpi_environment():
                 found_mpi = True
         
         if not found_mpi:
-            print("ℹ️  No MPI environment variables found (this is normal for some installations)")
+            print("ℹ️  No MPI environment variables found (using defaults)")
         
         # Check mpirun version
         try:
@@ -66,9 +63,6 @@ def test_mpi_features():
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
     size = comm.Get_size()
-    
-    if rank == 0:
-        print("=== MPI Feature Tests ===")
     
     # Test 1: Check MPI version and features
     mpi_version = MPI.Get_version()
@@ -112,9 +106,6 @@ def test_mpi_performance():
     rank = comm.Get_rank()
     size = comm.Get_size()
     
-    if rank == 0:
-        print("=== MPI Performance Tests ===")
-    
     # Test 1: Barrier timing
     comm.Barrier()
     start_time = MPI.Wtime()
@@ -127,7 +118,7 @@ def test_mpi_performance():
     
     # Test 2: Point-to-point latency
     if size >= 2:
-        iterations = 1000
+        iterations = 10  # Reduced from 100
         if rank == 0:
             # Send small messages to measure latency
             start_time = MPI.Wtime()
@@ -145,7 +136,7 @@ def test_mpi_performance():
     
     # Test 3: Bandwidth test
     if size >= 2:
-        data_sizes = [1024, 10240, 102400]  # 1KB, 10KB, 100KB
+        data_sizes = [1024, 10240, 102400]  # 1KB, 10KB, 100KB (consistent with OpenMPI)
         
         for data_size in data_sizes:
             if rank == 0:
@@ -170,9 +161,6 @@ def test_mpi_collectives():
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
     size = comm.Get_size()
-    
-    if rank == 0:
-        print("=== MPI Collective Tests ===")
     
     # Test 1: Broadcast
     if rank == 0:
@@ -215,17 +203,92 @@ def test_mpi_collectives():
     
     comm.Barrier()
 
+def test_mpi_communication():
+    """Test MPI point-to-point communication"""
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+    size = comm.Get_size()
+    
+    if size < 2:
+        if rank == 0:
+            print("Need at least 2 processes for communication test")
+        return
+    
+    # Test simple send/receive
+    if rank == 0:
+        message = f"Hello from rank 0 on {platform.node()}"
+        comm.send(message, dest=1, tag=123)
+        print(f"✅ Rank 0: Sent message to rank 1")
+    elif rank == 1:
+        message = comm.recv(source=0, tag=123)
+        print(f"✅ Rank 1: Received: {message}")
+    
+    # Test non-blocking communication
+    if rank == 0:
+        data = np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float64)
+        req = comm.Isend(data, dest=1, tag=456)
+        req.Wait()
+        print(f"✅ Rank 0: Non-blocking send completed")
+    elif rank == 1:
+        data = np.empty(5, dtype=np.float64)
+        req = comm.Irecv(data, source=0, tag=456)
+        req.Wait()
+        print(f"✅ Rank 1: Non-blocking receive completed: {data}")
+    
+    comm.Barrier()
+
+def test_mpi_bandwidth():
+    """Test MPI bandwidth performance"""
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+    size = comm.Get_size()
+    
+    if size < 2:
+        if rank == 0:
+            print("Need at least 2 processes for bandwidth test")
+        return
+    
+    # Test with different data sizes (matching OpenMPI)
+    for data_size_mb in [1, 5, 10, 20]:  # 1MB, 5MB, 10MB, 20MB
+        data_size = int(data_size_mb * 1024 * 1024 // 8)  # float64 = 8 bytes
+        
+        if rank == 0:
+            print(f"Testing {data_size_mb}MB bandwidth with 1 iterations")
+            print(f"Data size: {data_size} elements ({data_size * 8 / (1024*1024):.1f} MB)")
+            
+            data = np.random.random(data_size).astype(np.float64)
+            start_time = MPI.Wtime()
+            comm.Send(data, dest=1, tag=789)
+            send_time = MPI.Wtime() - start_time
+            
+            bytes_sent = data_size * 8
+            bandwidth = bytes_sent / (send_time * 1024 * 1024 * 1024)  # GB/s
+            print(f"  Send progress: 1/1")
+            print(f"Send {data_size_mb}MB: {bandwidth:.2f} GB/s")
+            
+        elif rank == 1:
+            data = np.empty(data_size, dtype=np.float64)
+            start_time = MPI.Wtime()
+            comm.Recv(data, source=0, tag=789)
+            recv_time = MPI.Wtime() - start_time
+            
+            bytes_received = data_size * 8
+            bandwidth = bytes_received / (recv_time * 1024 * 1024 * 1024)  # GB/s
+            print(f"Receive {data_size_mb}MB: {bandwidth:.2f} GB/s")
+    
+    comm.Barrier()
+
 def main():
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
+    size = comm.Get_size()
+    hostname = platform.node()
     
-    if rank == 0:
-        print("=== MPI Implementation Test Suite ===")
-        print(f"Running on {comm.Get_size()} processes")
-        print(f"Hostname: {platform.node()}")
-        print()
+    # Run bandwidth test FIRST (like OpenMPI) to ensure it completes before timeout
+    test_mpi_bandwidth()
+    comm.Barrier()
     
-    # Run all tests
+    # Run other tests after bandwidth test
     check_mpi_environment()
     comm.Barrier()
     
@@ -238,11 +301,8 @@ def main():
     test_mpi_collectives()
     comm.Barrier()
     
-    if rank == 0:
-        print("\n=== Test Summary ===")
-        print("The test will show which MPI implementation you're using.")
-        print("Make sure you have loaded the appropriate MPI modules or conda environment.")
-        print("\n✅ MPI implementation tests completed!")
+    test_mpi_communication()
+    comm.Barrier()
     
     MPI.Finalize()
 

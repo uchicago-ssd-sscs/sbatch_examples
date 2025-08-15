@@ -65,18 +65,31 @@ echo "=== Python MPI Bindings ==="
 python -c "from mpi4py import MPI; print(f'MPI Library: {MPI.Get_library_version()}'); print(f'MPI Version: {MPI.Get_version()}')"
 echo ""
 
-# Run the 100G MPI implementation test
-echo "=== Running 100G MPI Implementation Test ==="
-echo "Testing with data sizes: 1MB, 5MB, 10MB, 20MB (matching OpenMPI)"
-echo "Expected performance: 8-12.5 GB/s for 100G network"
-echo "Multi-node testing: $SLURM_NNODES nodes with $SLURM_NTASKS_PER_NODE tasks each"
-echo ""
-mpirun -np $SLURM_NTASKS python mpi_implementation_test.py
+# Test MPI
+echo "Testing MPI multi-node communication..."
+
+# Create hostfile for mpirun
+echo "Creating hostfile..."
+# Expand SLURM node list and create proper hostfile
+scontrol show hostnames $SLURM_JOB_NODELIST > hostfile.txt
+echo "Hostfile contents:"
+cat hostfile.txt
+
+# Test Cray MPICH functionality and performance
+echo "=== RUNNING CRAY MPICH FUNCTIONALITY TEST ==="
+echo "Testing Cray MPICH features, performance, and collectives..."
+mpirun -np $SLURM_NTASKS --hostfile hostfile.txt --bind-to none \
+  python mpi_test.py
+
+echo "Cray MPICH functionality test completed"
 
 echo ""
-echo "=== Running Cray MPICH Comprehensive Test ==="
-echo "Testing Cray MPICH features, performance, and collectives..."
-mpirun -np $SLURM_NTASKS python cray_mpich_test.py
+echo "=== RUNNING CRAY MPICH NETWORK PERFORMANCE TEST ==="
+echo "Testing Cray MPICH network bandwidth, latency, and topology..."
+mpirun -np $SLURM_NTASKS --hostfile hostfile.txt --bind-to none \
+  python network_bandwidth_test_v2.py
+
+echo "Cray MPICH network performance test completed"
 
 echo ""
 echo "=== Test completed ==="
