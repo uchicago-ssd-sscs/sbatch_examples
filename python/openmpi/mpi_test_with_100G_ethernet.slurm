@@ -45,10 +45,6 @@ export OMPI_MCA_btl_tcp_sndbuf=67108864    # 64MB send buffer for high bandwidth
 export OMPI_MCA_btl_tcp_rcvbuf=67108864    # 64MB receive buffer for high bandwidth
 export OMPI_MCA_btl_tcp_eager_limit=65536  # 64KB eager send threshold
 export OMPI_MCA_btl_tcp_rndv_eager_limit=65536  # 64KB rendezvous eager threshold
-# Force OOB (Out-of-Band) to use 100G interface by explicitly including only bond1
-export OMPI_MCA_oob_tcp_if_include="bond1"  # explicitly use only 100G bond1 interface
-export PRTE_MCA_oob_tcp_if_include="bond1"  # PRTE OOB interface inclusion (same as above)
-
 
 # Method 2: (UCX not available in this OpenMPI build) — do not configure UCX
 unset UCX_NET_DEVICES UCX_TLS UCX_SOCKADDR_TLS_PRIORITY UCX_TCP_CM_REUSEADDR UCX_TCP_MAX_RETRIES UCX_VERBOSE
@@ -56,12 +52,11 @@ unset UCX_NET_DEVICES UCX_TLS UCX_SOCKADDR_TLS_PRIORITY UCX_TCP_CM_REUSEADDR UCX
 # Method 3: Disable shared memory for cross-node communication
 export OMPI_MCA_btl_sm="^sm"  # Disable shared memory BTL for cross-node communication
 
-# Force use of only bond1 (100G) interface by explicitly including only bond1
-# First unset any conflicting exclude settings
-unset OMPI_MCA_btl_tcp_if_exclude
-unset OMPI_MCA_oob_tcp_if_exclude
-# Then set the include settings
-export OMPI_MCA_btl_tcp_if_include="bond1"  # explicitly use only 100G bond1 interface
+# CRITICAL: Force use of ONLY 10.150.x.x network (100G Ethernet)
+# Use ONLY include to specify exactly which network to use
+export OMPI_MCA_btl_tcp_if_include="10.150.0.0/16"  # Only allow 10.150.x.x network
+export OMPI_MCA_oob_tcp_if_include="10.150.0.0/16"  # Only allow 10.150.x.x network
+export PRTE_MCA_oob_tcp_if_include="10.150.0.0/16"  # Only allow 10.150.x.x network
 
 # Print network interface information
 echo "=== NETWORK INTERFACE INFORMATION ==="
@@ -83,14 +78,13 @@ ip addr show bond1 2>/dev/null || echo "bond1 not found"
 echo "InfiniBand interfaces:"
 ip link show | grep ib || echo "No InfiniBand interfaces found"
 
-echo "=== MPI CONFIGURATION ==="
+echo "=== MPI CONFIGURATION (100G ETHERNET ONLY) ==="
 echo "OMPI_MCA_btl: $OMPI_MCA_btl"
 echo "OMPI_MCA_btl_tcp_sndbuf: ${OMPI_MCA_btl_tcp_sndbuf}"
 echo "OMPI_MCA_btl_tcp_rcvbuf: ${OMPI_MCA_btl_tcp_rcvbuf}"
-echo "OMPI_MCA_btl_tcp_if_include: '${OMPI_MCA_btl_tcp_if_include}'"
-echo "OMPI_MCA_btl_tcp_if_exclude: '${OMPI_MCA_btl_tcp_if_exclude}'"
-echo "OMPI_MCA_oob_tcp_if_include: '${OMPI_MCA_oob_tcp_if_include}'"
-echo "OMPI_MCA_oob_tcp_if_exclude: '${OMPI_MCA_oob_tcp_if_exclude}'"
+echo "OMPI_MCA_btl_tcp_if_include: '${OMPI_MCA_btl_tcp_if_include}' (ONLY 10.150.x.x)"
+echo "OMPI_MCA_oob_tcp_if_include: '${OMPI_MCA_oob_tcp_if_include}' (ONLY 10.150.x.x)"
+echo "PRTE_MCA_oob_tcp_if_include: '${PRTE_MCA_oob_tcp_if_include}' (ONLY 10.150.x.x)"
 
 echo "=== Kernel TCP buffer limits (diagnostic) ==="
 sysctl -n net.core.rmem_max 2>/dev/null | sed 's/^/net.core.rmem_max=/' || echo "net.core.rmem_max: unknown"
