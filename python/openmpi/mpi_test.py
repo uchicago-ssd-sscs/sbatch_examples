@@ -255,7 +255,7 @@ def test_openmpi_bandwidth():
         return
     
     # Test with different data sizes (matching Cray MPICH)
-    for data_size_mb in [1, 5, 10, 20]:  # 1MB, 5MB, 10MB, 20MB
+    for data_size_mb in [1, 10, 50, 100]:  # 1MB, 10MB, 50MB, 100MB
         data_size = int(data_size_mb * 1024 * 1024 // 8)  # float64 = 8 bytes
         
         if rank == 0:

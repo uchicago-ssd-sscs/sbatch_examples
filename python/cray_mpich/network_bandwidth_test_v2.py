@@ -210,20 +210,20 @@ def main():
     size = comm.Get_size()
     hostname = platform.node()
     
-    # Run all network tests (matching OpenMPI parameters)
+    # Run all network tests (increased data sizes for performance testing)
     test_network_bandwidth(comm, rank, size, data_size_mb=1, iterations=1)  # 1MB test
-    comm.Barrier()
-    
-    test_network_bandwidth(comm, rank, size, data_size_mb=5, iterations=1)  # 5MB test
     comm.Barrier()
     
     test_network_bandwidth(comm, rank, size, data_size_mb=10, iterations=1)  # 10MB test
     comm.Barrier()
     
-    test_network_bandwidth(comm, rank, size, data_size_mb=20, iterations=1)  # 20MB test
+    test_network_bandwidth(comm, rank, size, data_size_mb=50, iterations=1)  # 50MB test
     comm.Barrier()
     
-    test_bidirectional_bandwidth(comm, rank, size, data_size_mb=20, iterations=1)  # 20MB test
+    test_network_bandwidth(comm, rank, size, data_size_mb=100, iterations=1)  # 100MB test
+    comm.Barrier()
+    
+    test_bidirectional_bandwidth(comm, rank, size, data_size_mb=100, iterations=1)  # 100MB test
     comm.Barrier()
     
     test_latency(comm, rank, size, iterations=10)  # Reduced from 100

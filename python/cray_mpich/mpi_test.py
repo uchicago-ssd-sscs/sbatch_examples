@@ -248,8 +248,8 @@ def test_mpi_bandwidth():
             print("Need at least 2 processes for bandwidth test")
         return
     
-    # Test with different data sizes (matching OpenMPI)
-    for data_size_mb in [1, 5, 10, 20]:  # 1MB, 5MB, 10MB, 20MB
+    # Test with different data sizes (increased for performance testing)
+    for data_size_mb in [1, 10, 50, 100]:  # 1MB, 10MB, 50MB, 100MB
         data_size = int(data_size_mb * 1024 * 1024 // 8)  # float64 = 8 bytes
         
         if rank == 0:
