@@ -129,9 +129,9 @@ else
   echo "Could not determine bond1 IPs; skipping ping tests"
 fi
 
-# Test MPI with 100 Gbps Ethernet configuration
-echo "Testing MPI with 100 Gbps Ethernet configuration..."
-echo "Launching $SLURM_NTASKS MPI processes across $SLURM_NNODES nodes..."
+# Test OpenMPI functionality with 100 Gbps Ethernet configuration
+echo "=== RUNNING OPENMPI FUNCTIONALITY TEST (100 GBPS ETHERNET) ==="
+echo "Testing OpenMPI features, performance, and collectives with 100 Gbps Ethernet..."
 mpirun -np $SLURM_NTASKS --hostfile hostfile.txt --bind-to none \
   --mca btl_base_verbose 100 \
   --mca oob_base_verbose 100 \
@@ -146,11 +146,11 @@ mpirun -np $SLURM_NTASKS --hostfile hostfile.txt --bind-to none \
   --mca btl_tcp_rndv_eager_limit "$OMPI_MCA_btl_tcp_rndv_eager_limit" \
   python mpi_test.py
 
-echo "MPI test completed"
+echo "OpenMPI functionality test completed"
 
 echo ""
-echo "=== RUNNING NETWORK BANDWIDTH TEST WITH 100 GBPS ETHERNET ==="
-echo "Testing actual cross-node network performance with 100 Gbps Ethernet..."
+echo "=== RUNNING OPENMPI NETWORK PERFORMANCE TEST (100 GBPS ETHERNET) ==="
+echo "Testing OpenMPI network bandwidth, latency, and topology with 100 Gbps Ethernet..."
 mpirun -np $SLURM_NTASKS --hostfile hostfile.txt --bind-to none \
   --mca btl_base_verbose 100 \
   --mca oob_base_verbose 100 \
@@ -165,6 +165,6 @@ mpirun -np $SLURM_NTASKS --hostfile hostfile.txt --bind-to none \
   --mca btl_tcp_rndv_eager_limit "$OMPI_MCA_btl_tcp_rndv_eager_limit" \
   python network_bandwidth_test_v2.py
 
-echo "Network bandwidth test completed"
+echo "OpenMPI network performance test completed"
 
 bash slurm_diagnostic.sh

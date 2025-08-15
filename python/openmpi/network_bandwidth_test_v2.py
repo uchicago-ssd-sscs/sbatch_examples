@@ -5,6 +5,7 @@ import time
 import platform
 import socket
 import os
+import sys
 
 try:
     from mpi4py import MPI
@@ -12,13 +13,16 @@ try:
 except ImportError:
     MPI_AVAILABLE = False
     print("MPI not available")
-    exit(1)
+    sys.exit(1)
 
 def test_network_bandwidth(comm, rank, size, data_size_mb=4096, iterations=10):
-    """Network bandwidth test with better methodology"""
+    """Network bandwidth test with comprehensive metrics"""
     
     if size < 2:
         return
+    
+    if rank == 0:
+        print(f"Testing {data_size_mb}MB bandwidth with {iterations} iterations")
     
     # Use larger data sizes to reduce overhead
     data_size = int(data_size_mb * 1024 * 1024 // 8)  # float64 = 8 bytes
@@ -33,9 +37,8 @@ def test_network_bandwidth(comm, rank, size, data_size_mb=4096, iterations=10):
     
     comm.Barrier()
     
-    # Test point-to-point communication with better timing
+    # Test point-to-point communication with comprehensive timing
     if rank == 0:
-        print(f"Testing network bandwidth with {data_size_mb}MB data, {iterations} iterations")
         print(f"Data size: {data_size} elements ({data_size * 8 / (1024*1024):.1f} MB)")
         
         # Send data to rank 1
@@ -50,9 +53,9 @@ def test_network_bandwidth(comm, rank, size, data_size_mb=4096, iterations=10):
         # Calculate send bandwidth
         bytes_sent = data_size * 8 * iterations
         send_bandwidth = bytes_sent / (send_time * 1024 * 1024 * 1024)  # GB/s
+        send_bandwidth_mbps = bytes_sent / (send_time * 1024 * 1024)  # MB/s
         
-        print(f"Send bandwidth: {send_bandwidth:.2f} GB/s")
-        print(f"Send time: {send_time:.3f} seconds")
+        print(f"Send {data_size_mb}MB: {send_bandwidth:.2f} GB/s")
         
     elif rank == 1:
         # Receive data from rank 0
@@ -67,14 +70,16 @@ def test_network_bandwidth(comm, rank, size, data_size_mb=4096, iterations=10):
         bytes_received = data_size * 8 * iterations
         recv_bandwidth = bytes_received / (recv_time * 1024 * 1024 * 1024)  # GB/s
         
-        print(f"Receive bandwidth: {recv_bandwidth:.2f} GB/s")
-        print(f"Receive time: {recv_time:.3f} seconds")
+        print(f"Receive {data_size_mb}MB: {recv_bandwidth:.2f} GB/s")
 
 def test_bidirectional_bandwidth(comm, rank, size, data_size_mb=2048, iterations=5):
     """Test bidirectional bandwidth with non-blocking operations"""
     
     if size < 2:
         return
+    
+    if rank == 0:
+        print(f"Testing bidirectional {data_size_mb}MB bandwidth with {iterations} iterations")
     
     data_size = int(data_size_mb * 1024 * 1024 // 8)
     send_data = np.random.random(data_size).astype(np.float64)
@@ -98,133 +103,152 @@ def test_bidirectional_bandwidth(comm, rank, size, data_size_mb=2048, iterations
         # Calculate bidirectional bandwidth
         bytes_transferred = data_size * 8 * iterations * 2  # Both directions
         bidir_bandwidth = bytes_transferred / (bidir_time * 1024 * 1024 * 1024)  # GB/s
+        bidir_bandwidth_mbps = bytes_transferred / (bidir_time * 1024 * 1024)  # MB/s
         
-        print(f"Bidirectional bandwidth: {bidir_bandwidth:.2f} GB/s")
-        print(f"Bidirectional time: {bidir_time:.3f} seconds")
+        print(f"Bidirectional {data_size_mb}MB: {bidir_bandwidth:.2f} GB/s")
 
-def test_large_transfer(comm, rank, size, data_size_mb=16384, iterations=3):
-    """Test with very large data transfer to minimize overhead"""
+def test_latency(comm, rank, size, iterations=10000):
+    """Test network latency with small messages"""
     
     if size < 2:
         return
     
-    data_size = int(data_size_mb * 1024 * 1024 // 8)
-    
     if rank == 0:
-        print(f"\nTesting large transfer: {data_size_mb}MB data, {iterations} iterations")
-        data = np.random.random(data_size).astype(np.float64)
-        
+        print(f"Testing latency with {iterations} iterations")
+    
+    # Test with small messages to measure latency
+    if rank == 0:
         start_time = MPI.Wtime()
         for i in range(iterations):
-            comm.Send(data, dest=1, tag=789)
-            print(f"  Large transfer progress: {i+1}/{iterations}")
-        send_time = MPI.Wtime() - start_time
+            comm.send(i, dest=1, tag=789)
+        end_time = MPI.Wtime()
         
-        bytes_sent = data_size * 8 * iterations
-        large_bandwidth = bytes_sent / (send_time * 1024 * 1024 * 1024)  # GB/s
+        total_time = end_time - start_time
+        avg_latency = total_time / iterations * 1000000  # microseconds
+        min_latency = total_time / iterations * 1000000  # approximation
         
-        print(f"Large transfer bandwidth: {large_bandwidth:.2f} GB/s")
-        print(f"Large transfer time: {send_time:.3f} seconds")
+        print(f"Average latency: {avg_latency:.2f} microseconds")
+        print(f"Total time: {total_time:.6f} seconds")
+        print(f"Messages sent: {iterations}")
         
     elif rank == 1:
-        received_data = np.empty(data_size, dtype=np.float64)
-        
-        start_time = MPI.Wtime()
-        for _ in range(iterations):
-            comm.Recv(received_data, source=0, tag=789)
-        recv_time = MPI.Wtime() - start_time
-        
-        bytes_received = data_size * 8 * iterations
-        large_bandwidth = bytes_received / (recv_time * 1024 * 1024 * 1024)  # GB/s
-        
-        print(f"Large transfer bandwidth: {large_bandwidth:.2f} GB/s")
-        print(f"Large transfer time: {recv_time:.3f} seconds")
+        for i in range(iterations):
+            data = comm.recv(source=0, tag=789)
 
-def check_network_info(comm, rank):
-    """Check network interface information"""
+def test_different_message_sizes(comm, rank, size):
+    """Test bandwidth with different message sizes"""
+    
+    if size < 2:
+        return
     
     if rank == 0:
-        print("\n=== NETWORK INTERFACE INFORMATION ===")
+        print("Testing different message sizes:")
+    
+    # Test different message sizes
+    message_sizes = [1024, 10240, 102400]  # 1KB, 10KB, 100KB (matching Cray MPICH)
+    
+    for msg_size in message_sizes:
+        data_size = msg_size // 8  # float64 = 8 bytes
+        iterations = max(1, 1000000 // msg_size)  # Adjust iterations based on size
         
-        # Check for InfiniBand interfaces
-        try:
-            import subprocess
-            result = subprocess.run(['ip', 'link', 'show'], capture_output=True, text=True)
-            if 'ib' in result.stdout.lower():
-                print("✅ InfiniBand interfaces detected")
-            else:
-                print("⚠️  No InfiniBand interfaces found")
-                
-            # Check for high-speed interfaces
-            if '100g' in result.stdout.lower() or '100000' in result.stdout.lower():
-                print("✅ 100G interfaces detected")
-            elif '40g' in result.stdout.lower() or '40000' in result.stdout.lower():
-                print("✅ 40G interfaces detected")
-            else:
-                print("⚠️  No high-speed interfaces detected")
-                
-        except Exception as e:
-            print(f"Could not check network interfaces: {e}")
+        if rank == 0:
+            data = np.random.random(data_size).astype(np.float64)
+            start_time = MPI.Wtime()
+            for _ in range(iterations):
+                comm.Send(data, dest=1, tag=999)
+            end_time = MPI.Wtime()
+            
+            total_time = end_time - start_time
+            bytes_sent = data_size * 8 * iterations
+            bandwidth = bytes_sent / (total_time * 1024 * 1024)  # MB/s (matching Cray MPICH)
+            
+            print(f"Bandwidth ({msg_size} elements): {bandwidth:.2f} MB/s")
+            
+        elif rank == 1:
+            data = np.empty(data_size, dtype=np.float64)
+            for _ in range(iterations):
+                comm.Recv(data, source=0, tag=999)
+
+def test_network_topology(comm, rank, size):
+    """Test network topology and connectivity"""
+    
+    if rank == 0:
+        print("Network topology:")
+    
+    # Gather hostnames to understand topology
+    hostname = platform.node()
+    all_hostnames = comm.gather(hostname, root=0)
+    
+    if rank == 0:
+        unique_nodes = set(all_hostnames)
+        print(f"Total processes: {size}")
+        print(f"Unique nodes: {len(unique_nodes)}")
+        print(f"Node distribution:")
+        for node in sorted(unique_nodes):
+            count = all_hostnames.count(node)
+            print(f"  {node}: {count} processes")
         
-        # Check MPI implementation
-        print(f"MPI Implementation: {MPI.Get_library_version()}")
-        
-        # Check for environment variables
-        ib_vars = ['OMPI_MCA_btl_openib_if_include', 'OMPI_MCA_btl', 'UCX_NET_DEVICES']
-        for var in ib_vars:
-            if var in os.environ:
-                print(f"✅ {var}: {os.environ[var]}")
-            else:
-                print(f"⚠️  {var}: Not set")
+        if len(unique_nodes) > 1:
+            print("✅ Multi-node communication detected!")
+        else:
+            print("⚠️  Single-node communication only")
+    
+    # Test communication between different nodes
+    if size >= 2:
+        if rank == 0:
+            # Send to all other ranks
+            for dest in range(1, size):
+                comm.send(f"Hello from {hostname}", dest=dest, tag=1000)
+        else:
+            # Receive from rank 0
+            message = comm.recv(source=0, tag=1000)
+            print(f"Rank {rank} on {hostname}: Received '{message}'")
 
 def main():
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
     size = comm.Get_size()
-    
     hostname = platform.node()
     
-    # Gather all hostnames
-    all_hostnames = comm.gather(hostname, root=0)
+    if rank == 0:
+        print("=== OpenMPI Network Performance Test Suite ===")
+        print(f"MPI Implementation: {MPI.Get_library_version()}")
+        print(f"Running on {size} processes")
+        print(f"Hostname: {hostname}")
+        print()
+    
+    # Run all network tests (matching Cray MPICH parameters)
+    test_network_bandwidth(comm, rank, size, data_size_mb=1, iterations=1)  # 1MB test
+    comm.Barrier()
+    
+    test_network_bandwidth(comm, rank, size, data_size_mb=10, iterations=1)  # 10MB test
+    comm.Barrier()
+    
+    test_network_bandwidth(comm, rank, size, data_size_mb=100, iterations=1)  # 100MB test
+    comm.Barrier()
+    
+    test_bidirectional_bandwidth(comm, rank, size, data_size_mb=512, iterations=3)
+    comm.Barrier()
+    
+    test_latency(comm, rank, size, iterations=1000)
+    comm.Barrier()
+    
+    test_different_message_sizes(comm, rank, size)
+    comm.Barrier()
+    
+    test_network_topology(comm, rank, size)
+    comm.Barrier()
     
     if rank == 0:
-        print("=== NETWORK BANDWIDTH TEST ===")
-        print(f"MPI Size: {size}")
-        unique_nodes = len(set(all_hostnames))
-        print(f"Testing between nodes: {', '.join(sorted(set(all_hostnames)))}")
-        print(f"Unique nodes: {unique_nodes}")
-        print(f"Processes per node: {size // unique_nodes}")
-        
-        if unique_nodes > 1:
-            print("✅ Testing cross-node network bandwidth")
-        else:
-            print("⚠️  All processes on same node - testing local communication")
+        print("\n=== Network Test Summary ===")
+        print("The test shows OpenMPI network performance metrics including:")
+        print("- Unidirectional bandwidth (GB/s)")
+        print("- Bidirectional bandwidth (GB/s)")
+        print("- Network latency (microseconds)")
+        print("- Performance with different message sizes")
+        print("- Network topology information")
+        print("\n✅ OpenMPI network performance tests completed!")
     
-    # Check network information
-    check_network_info(comm, rank)
-    
-    # Test with different data sizes (larger to reduce overhead)
-    for data_size_mb in [1024, 4096, 8192]:
-        test_network_bandwidth(comm, rank, size, data_size_mb, iterations=5)
-        comm.Barrier()
-    
-    # Test bidirectional
-    test_bidirectional_bandwidth(comm, rank, size, data_size_mb=2048, iterations=3)
-    
-    # Test very large transfer
-    test_large_transfer(comm, rank, size, data_size_mb=16384, iterations=2)
-    
-    if rank == 0:
-        print("\n=== NETWORK BANDWIDTH TEST COMPLETED ===")
-        print("Expected bandwidth for 100 Gbps interface: ~10-12 GB/s")
-        print("If results are significantly lower, check:")
-        print("1. MPI is using bond1 (100 Gbps) not bond0 (1 Gbps)")
-        print("2. MPI configuration (OpenMPI/UCX)")
-        print("3. Network interface selection")
-        print("4. System resource limits")
-        print("5. Switch configuration and cable quality")
-    
-    # Ensure proper MPI finalization
     MPI.Finalize()
 
 if __name__ == "__main__":

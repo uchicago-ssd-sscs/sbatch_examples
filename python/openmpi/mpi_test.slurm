@@ -39,18 +39,18 @@ scontrol show hostnames $SLURM_JOB_NODELIST > hostfile.txt
 echo "Hostfile contents:"
 cat hostfile.txt
 
-# Test MPI with proper hostfile
-echo "Testing MPI with expanded hostfile..."
-echo "Launching 10 MPI processes across 5 nodes..."
+# Test OpenMPI functionality and performance
+echo "=== RUNNING OPENMPI FUNCTIONALITY TEST ==="
+echo "Testing OpenMPI features, performance, and collectives..."
 mpirun -np 10 --hostfile hostfile.txt --bind-to none python mpi_test.py
 
-echo "MPI test completed"
+echo "OpenMPI functionality test completed"
 
 echo ""
-echo "=== RUNNING NETWORK BANDWIDTH TEST ==="
-echo "Testing actual cross-node network performance..."
+echo "=== RUNNING OPENMPI NETWORK PERFORMANCE TEST ==="
+echo "Testing OpenMPI network bandwidth, latency, and topology..."
 mpirun -np 10 --hostfile hostfile.txt --bind-to none python network_bandwidth_test_v2.py
 
-echo "Network bandwidth test completed"
+echo "OpenMPI network performance test completed"
 
 bash slurm_diagnostic.sh
