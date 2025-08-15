@@ -13,9 +13,8 @@ dependencies:
   - openmpi>=4.1.4
   
   # GPU computing (PyTorch with CUDA support)
-  - pytorch>=2.0.0
-  - pytorch-cuda>=12.1
-  
+  - torch
+
   # Additional useful packages
   - networkx>=3.0
   - matplotlib>=3.5.0
