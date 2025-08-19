@@ -44,6 +44,42 @@ def check_openmpi_environment():
         if not found_ompi:
             print("ℹ️  No OpenMPI MCA parameters found (using defaults)")
         
+        # Check for UCX/RoCE indicators
+        ucx_vars = ['UCX_NET_DEVICES', 'UCX_TLS', 'UCX_IB_DEVICE_SPECS']
+        print("\n=== UCX/RoCE Detection ===")
+        for var in ucx_vars:
+            if var in os.environ:
+                print(f"✅ Found {var}: {os.environ[var]}")
+        
+        # Check if UCX is available
+        try:
+            result = subprocess.run(['ucx_info', '-d'], capture_output=True, text=True, timeout=5)
+            if result.returncode == 0:
+                print("✅ UCX available - checking devices:")
+                lines = result.stdout.split('\n')[:10]  # First 10 lines
+                for line in lines:
+                    if 'mlx' in line.lower() or 'roce' in line.lower() or 'ib' in line.lower():
+                        print(f"  🚀 {line.strip()}")
+            else:
+                print("⚠️  UCX not available or no devices found")
+        except Exception as e:
+            print(f"⚠️  Could not run ucx_info: {e}")
+        
+        # Check for RDMA-capable interfaces
+        print("\n=== RDMA Interface Detection ===")
+        try:
+            result = subprocess.run(['ibv_devinfo'], capture_output=True, text=True, timeout=5)
+            if result.returncode == 0 and result.stdout.strip():
+                print("✅ InfiniBand/RoCE devices found:")
+                for line in result.stdout.split('\n')[:5]:
+                    if line.strip():
+                        print(f"  🚀 {line.strip()}")
+            else:
+                print("❌ No InfiniBand/RoCE devices found (falling back to TCP)")
+        except Exception as e:
+            print(f"⚠️  Could not run ibv_devinfo: {e}")
+            print("❌ RDMA tools not available - likely using TCP only")
+        
         # Check mpirun version
         try:
             result = subprocess.run(['mpirun', '--version'], 
