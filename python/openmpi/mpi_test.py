@@ -142,7 +142,7 @@ def test_openmpi_performance():
     
     # Test 3: Bidirectional bandwidth test
     if size >= 2:
-        data_sizes = [1024, 10240, 102400]  # 1KB, 10KB, 100KB (consistent with Cray MPICH)
+        data_sizes = [1024, 10240, 102400, 1048576, 10485760, 52428800]  # 1KB, 10KB, 100KB, 1MB, 10MB, 50MB
         
         for data_size in data_sizes:
             # Both ranks send and receive simultaneously for bidirectional test
@@ -161,7 +161,8 @@ def test_openmpi_performance():
                 transfer_time = end_time - start_time
                 bytes_transferred = data_size * 8 * 2  # Both directions
                 bandwidth = bytes_transferred / (transfer_time * 1024 * 1024)  # MB/s
-                print(f"Bidirectional bandwidth ({data_size} elements): {bandwidth:.2f} MB/s")
+                data_size_mb = (data_size * 8) / (1024 * 1024)  # Convert to MB
+                print(f"Bidirectional bandwidth ({data_size} elements, {data_size_mb:.1f}MB): {bandwidth:.2f} MB/s")
                 
             elif rank == 1:
                 # Simultaneous send and receive using Sendrecv

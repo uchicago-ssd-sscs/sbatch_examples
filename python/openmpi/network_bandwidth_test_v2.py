@@ -136,8 +136,8 @@ def test_different_message_sizes(comm, rank, size):
     if rank == 0:
         print("Testing bidirectional bandwidth with different message sizes:")
     
-    # Test different message sizes
-    message_sizes = [1024, 10240, 102400]  # 1KB, 10KB, 100KB (matching Cray MPICH)
+    # Test different message sizes - expanded range for comprehensive testing
+    message_sizes = [1024, 10240, 102400, 1048576, 10485760, 52428800, 104857600]  # 1KB, 10KB, 100KB, 1MB, 10MB, 50MB, 100MB
     
     for msg_size in message_sizes:
         data_size = msg_size // 8  # float64 = 8 bytes
@@ -159,7 +159,8 @@ def test_different_message_sizes(comm, rank, size):
             bytes_transferred = data_size * 8 * iterations * 2  # Both directions
             bandwidth = bytes_transferred / (total_time * 1024 * 1024)  # MB/s (matching Cray MPICH)
             
-            print(f"Bidirectional bandwidth ({msg_size} elements): {bandwidth:.2f} MB/s")
+            msg_size_mb = (msg_size * 8) / (1024 * 1024)  # Convert to MB
+            print(f"Bidirectional bandwidth ({msg_size} elements, {msg_size_mb:.1f}MB): {bandwidth:.2f} MB/s")
             
         elif rank == 1:
             for _ in range(iterations):
@@ -209,7 +210,7 @@ def main():
     
 
     
-    # Run all network tests (increased data sizes for performance testing)
+    # Run all network tests (expanded data sizes for comprehensive performance testing)
     test_network_bandwidth(comm, rank, size, data_size_mb=1, iterations=1)  # 1MB test
     comm.Barrier()
     
@@ -222,7 +223,13 @@ def main():
     test_network_bandwidth(comm, rank, size, data_size_mb=100, iterations=1)  # 100MB test
     comm.Barrier()
     
-    test_bidirectional_bandwidth(comm, rank, size, data_size_mb=100, iterations=1)  # 100MB test
+    test_network_bandwidth(comm, rank, size, data_size_mb=500, iterations=1)  # 500MB test
+    comm.Barrier()
+    
+    test_network_bandwidth(comm, rank, size, data_size_mb=1000, iterations=1)  # 1GB test
+    comm.Barrier()
+    
+    test_bidirectional_bandwidth(comm, rank, size, data_size_mb=500, iterations=1)  # 500MB test
     comm.Barrier()
     
     test_latency(comm, rank, size, iterations=10)  # Reduced from 100
