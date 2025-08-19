@@ -39,6 +39,9 @@ bash Miniconda3-latest-Linux-x86_64.sh
 source ~/.bashrc
 ```
 
+> Using a conda environment is very important!
+> The software required for OpenMPI and RoCE/RDMA will not be present unless you build the conda environment.
+
 ### **Step 2: Create OpenMPI Environment**
 
 Create the OpenMPI environment from the provided `environment.yml` in this directory:
