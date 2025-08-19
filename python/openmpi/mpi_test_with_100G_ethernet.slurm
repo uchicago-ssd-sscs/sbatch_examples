@@ -38,25 +38,19 @@ echo ""
 # Configure MPI to use 100 Gbps Ethernet bond1 interface
 echo "=== CONFIGURING MPI FOR 100 GBPS ETHERNET (bond1) ==="
 
-# Method 1: OpenMPI TCP configuration for Ethernet (no UCX)
-export OMPI_MCA_btl=self,tcp        # use only loopback and TCP BTLs
-export OMPI_MCA_pml=ob1             # default pml without UCX
-export OMPI_MCA_btl_tcp_sndbuf=67108864    # 64MB send buffer for high bandwidth
-export OMPI_MCA_btl_tcp_rcvbuf=67108864    # 64MB receive buffer for high bandwidth
-export OMPI_MCA_btl_tcp_eager_limit=65536  # 64KB eager send threshold
-export OMPI_MCA_btl_tcp_rndv_eager_limit=65536  # 64KB rendezvous eager threshold
+# Allow OpenMPI to auto-detect and use the best available transport
+# Removed all TCP-specific restrictions to enable optimal performance
+echo "Allowing OpenMPI to auto-detect optimal transport (no TCP restrictions)"
 
-# Method 2: (UCX not available in this OpenMPI build) — do not configure UCX
+# Optional: Set high-performance tuning parameters but don't force specific transport
+export OMPI_MCA_btl_tcp_sndbuf=67108864    # Large send buffer if TCP is used
+export OMPI_MCA_btl_tcp_rcvbuf=67108864    # Large receive buffer if TCP is used
+
+# Clear any UCX restrictions to allow auto-detection
 unset UCX_NET_DEVICES UCX_TLS UCX_SOCKADDR_TLS_PRIORITY UCX_TCP_CM_REUSEADDR UCX_TCP_MAX_RETRIES UCX_VERBOSE
 
-# Method 3: Disable shared memory for cross-node communication
-export OMPI_MCA_btl_sm="^sm"  # Disable shared memory BTL for cross-node communication
-
-# CRITICAL: Force use of ONLY 10.150.x.x network (100G Ethernet)
-# Use ONLY include to specify exactly which network to use
-export OMPI_MCA_btl_tcp_if_include="10.150.0.0/16"  # Only allow 10.150.x.x network
-export OMPI_MCA_oob_tcp_if_include="10.150.0.0/16"  # Only allow 10.150.x.x network
-export PRTE_MCA_oob_tcp_if_include="10.150.0.0/16"  # Only allow 10.150.x.x network
+# Remove network interface restrictions - let OpenMPI choose the best interface
+# Removed: OMPI_MCA_btl_tcp_if_include, OMPI_MCA_oob_tcp_if_include, PRTE_MCA_oob_tcp_if_include
 
 # Print network interface information
 echo "=== NETWORK INTERFACE INFORMATION ==="
@@ -78,13 +72,12 @@ ip addr show bond1 2>/dev/null || echo "bond1 not found"
 echo "InfiniBand interfaces:"
 ip link show | grep ib || echo "No InfiniBand interfaces found"
 
-echo "=== MPI CONFIGURATION (100G ETHERNET ONLY) ==="
-echo "OMPI_MCA_btl: $OMPI_MCA_btl"
+echo "=== MPI CONFIGURATION (AUTO-DETECT OPTIMAL TRANSPORT) ==="
+echo "OMPI_MCA_btl: ${OMPI_MCA_btl:-auto-detect}"
+echo "OMPI_MCA_pml: ${OMPI_MCA_pml:-auto-detect}"
 echo "OMPI_MCA_btl_tcp_sndbuf: ${OMPI_MCA_btl_tcp_sndbuf}"
 echo "OMPI_MCA_btl_tcp_rcvbuf: ${OMPI_MCA_btl_tcp_rcvbuf}"
-echo "OMPI_MCA_btl_tcp_if_include: '${OMPI_MCA_btl_tcp_if_include}' (ONLY 10.150.x.x)"
-echo "OMPI_MCA_oob_tcp_if_include: '${OMPI_MCA_oob_tcp_if_include}' (ONLY 10.150.x.x)"
-echo "PRTE_MCA_oob_tcp_if_include: '${PRTE_MCA_oob_tcp_if_include}' (ONLY 10.150.x.x)"
+echo "Network interface restrictions: REMOVED (auto-detect best interface)"
 
 echo "=== Kernel TCP buffer limits (diagnostic) ==="
 sysctl -n net.core.rmem_max 2>/dev/null | sed 's/^/net.core.rmem_max=/' || echo "net.core.rmem_max: unknown"
@@ -93,7 +86,6 @@ sysctl -n net.ipv4.tcp_rmem 2>/dev/null | sed 's/^/net.ipv4.tcp_rmem=/' || echo 
 sysctl -n net.ipv4.tcp_wmem 2>/dev/null | sed 's/^/net.ipv4.tcp_wmem=/' || echo "net.ipv4.tcp_wmem: unknown"
 sysctl -n net.ipv4.tcp_congestion_control 2>/dev/null | sed 's/^/net.ipv4.tcp_congestion_control=/' || echo "net.ipv4.tcp_congestion_control: unknown"
 sysctl -n net.ipv4.tcp_window_scaling 2>/dev/null | sed 's/^/net.ipv4.tcp_window_scaling=/' || echo "net.ipv4.tcp_window_scaling: unknown"
-echo "OMPI_MCA_pml: $OMPI_MCA_pml"
 echo "UCX_SOCKADDR_CM_SOURCE_ADDRESS: ${UCX_SOCKADDR_CM_SOURCE_ADDRESS}"
 
 # Test MPI
@@ -129,40 +121,22 @@ else
   echo "Could not determine bond1 IPs; skipping ping tests"
 fi
 
-# Test OpenMPI functionality with 100 Gbps Ethernet configuration
-echo "=== RUNNING OPENMPI FUNCTIONALITY TEST (100 GBPS ETHERNET) ==="
-echo "Testing OpenMPI features, performance, and collectives with 100 Gbps Ethernet..."
+# Test OpenMPI functionality with auto-detected optimal transport
+echo "=== RUNNING OPENMPI FUNCTIONALITY TEST (AUTO-DETECT TRANSPORT) ==="
+echo "Testing OpenMPI features, performance, and collectives with optimal transport..."
 mpirun -np $SLURM_NTASKS --hostfile hostfile.txt --bind-to none \
   --mca btl_base_verbose 100 \
   --mca oob_base_verbose 100 \
-  --mca btl "$OMPI_MCA_btl" \
-  --mca pml "$OMPI_MCA_pml" \
-  --mca btl_sm "$OMPI_MCA_btl_sm" \
-  --mca oob_tcp_if_include "$OMPI_MCA_oob_tcp_if_include" \
-  --mca btl_tcp_if_include "$OMPI_MCA_btl_tcp_if_include" \
-  --mca btl_tcp_sndbuf "$OMPI_MCA_btl_tcp_sndbuf" \
-  --mca btl_tcp_rcvbuf "$OMPI_MCA_btl_tcp_rcvbuf" \
-  --mca btl_tcp_eager_limit "$OMPI_MCA_btl_tcp_eager_limit" \
-  --mca btl_tcp_rndv_eager_limit "$OMPI_MCA_btl_tcp_rndv_eager_limit" \
   python mpi_test.py
 
 echo "OpenMPI functionality test completed"
 
 echo ""
-echo "=== RUNNING OPENMPI NETWORK PERFORMANCE TEST (100 GBPS ETHERNET) ==="
-echo "Testing OpenMPI network bandwidth, latency, and topology with 100 Gbps Ethernet..."
+echo "=== RUNNING OPENMPI NETWORK PERFORMANCE TEST (AUTO-DETECT TRANSPORT) ==="
+echo "Testing OpenMPI network bandwidth, latency, and topology with optimal transport..."
 mpirun -np $SLURM_NTASKS --hostfile hostfile.txt --bind-to none \
   --mca btl_base_verbose 100 \
   --mca oob_base_verbose 100 \
-  --mca btl "$OMPI_MCA_btl" \
-  --mca pml "$OMPI_MCA_pml" \
-  --mca btl_sm "$OMPI_MCA_btl_sm" \
-  --mca oob_tcp_if_include "$OMPI_MCA_oob_tcp_if_include" \
-  --mca btl_tcp_if_include "$OMPI_MCA_btl_tcp_if_include" \
-  --mca btl_tcp_sndbuf "$OMPI_MCA_btl_tcp_sndbuf" \
-  --mca btl_tcp_rcvbuf "$OMPI_MCA_btl_tcp_rcvbuf" \
-  --mca btl_tcp_eager_limit "$OMPI_MCA_btl_tcp_eager_limit" \
-  --mca btl_tcp_rndv_eager_limit "$OMPI_MCA_btl_tcp_rndv_eager_limit" \
   python network_bandwidth_test_v2.py
 
 echo "OpenMPI network performance test completed"

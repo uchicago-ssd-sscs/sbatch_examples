@@ -25,11 +25,9 @@ else
     echo "Warning: conda.sh not found; skipping conda activation"
 fi
 
-# Configure MPI to use ONLY 10.150.x.x network (100G Ethernet)
-echo "=== CONFIGURING MPI FOR 100G ETHERNET (10.150.x.x ONLY) ==="
-export OMPI_MCA_btl_tcp_if_include="10.150.0.0/16"  # Only allow 10.150.x.x network
-export OMPI_MCA_oob_tcp_if_include="10.150.0.0/16"  # Only allow 10.150.x.x network
-export PRTE_MCA_oob_tcp_if_include="10.150.0.0/16"  # Only allow 10.150.x.x network
+# Allow OpenMPI to auto-detect and use the best available transport
+echo "=== CONFIGURING MPI FOR OPTIMAL TRANSPORT (AUTO-DETECT) ==="
+echo "Allowing OpenMPI to auto-detect optimal transport (no restrictions)"
 
 # Print SLURM environment
 echo "=== OpenMPI Test (Exclusive Node Allocation) ==="
@@ -55,8 +53,6 @@ cat hostfile.txt
 echo "=== RUNNING OPENMPI FUNCTIONALITY TEST ==="
 echo "Testing OpenMPI features, performance, and collectives..."
 mpirun -np $SLURM_NTASKS --hostfile hostfile.txt --bind-to none \
-  --mca oob_tcp_if_include "$OMPI_MCA_oob_tcp_if_include" \
-  --mca btl_tcp_if_include "$OMPI_MCA_btl_tcp_if_include" \
   python mpi_test.py
 
 echo "OpenMPI functionality test completed"
@@ -65,8 +61,6 @@ echo ""
 echo "=== RUNNING OPENMPI NETWORK PERFORMANCE TEST ==="
 echo "Testing OpenMPI network bandwidth, latency, and topology..."
 mpirun -np $SLURM_NTASKS --hostfile hostfile.txt --bind-to none \
-  --mca oob_tcp_if_include "$OMPI_MCA_oob_tcp_if_include" \
-  --mca btl_tcp_if_include "$OMPI_MCA_btl_tcp_if_include" \
   python network_bandwidth_test_v2.py
 
 echo "OpenMPI network performance test completed"

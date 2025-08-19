@@ -114,45 +114,59 @@ def test_mpi_performance():
     
     if rank == 0:
         barrier_time = end_time - start_time
-        print(f"Barrier synchronization time: {barrier_time:.6f} seconds")
+        barrier_time_us = barrier_time * 1000000  # microseconds
+        print(f"Barrier synchronization time: {barrier_time_us:.2f} microseconds")
     
-    # Test 2: Point-to-point latency
+    # Test 2: Bidirectional point-to-point latency
     if size >= 2:
         iterations = 10  # Reduced from 100
         if rank == 0:
-            # Send small messages to measure latency
+            # Bidirectional ping-pong test
             start_time = MPI.Wtime()
             for i in range(iterations):
+                # Send to rank 1 and wait for response
                 comm.send(i, dest=1, tag=123)
+                response = comm.recv(source=1, tag=124)
             end_time = MPI.Wtime()
-            send_time = end_time - start_time
-            latency = send_time / iterations * 1000000  # microseconds
-            print(f"Point-to-point latency: {latency:.2f} microseconds")
+            
+            total_time = end_time - start_time
+            # Divide by 2 since each iteration is a round trip
+            latency = (total_time / iterations / 2) * 1000000  # microseconds
+            print(f"Bidirectional point-to-point latency: {latency:.2f} microseconds")
             
         elif rank == 1:
-            # Receive messages
+            # Respond to ping-pong from rank 0
             for i in range(iterations):
                 data = comm.recv(source=0, tag=123)
+                comm.send(data, dest=0, tag=124)  # Echo back
     
-    # Test 3: Bandwidth test
+    # Test 3: Bidirectional bandwidth test
     if size >= 2:
         data_sizes = [1024, 10240, 102400]  # 1KB, 10KB, 100KB (consistent with OpenMPI)
         
         for data_size in data_sizes:
+            # Both ranks send and receive simultaneously for bidirectional test
+            data_send = np.random.random(data_size).astype(np.float64)
+            data_recv = np.empty(data_size, dtype=np.float64)
+            
+            comm.Barrier()  # Synchronize before timing
+            
             if rank == 0:
-                data = np.random.random(data_size).astype(np.float64)
                 start_time = MPI.Wtime()
-                comm.Send(data, dest=1, tag=456)
+                # Simultaneous send and receive using Sendrecv
+                comm.Sendrecv(data_send, dest=1, sendtag=456,
+                             recvbuf=data_recv, source=1, recvtag=457)
                 end_time = MPI.Wtime()
                 
                 transfer_time = end_time - start_time
-                bytes_sent = data_size * 8
-                bandwidth = bytes_sent / (transfer_time * 1024 * 1024)  # MB/s
-                print(f"Bandwidth ({data_size} elements): {bandwidth:.2f} MB/s")
+                bytes_transferred = data_size * 8 * 2  # Both directions
+                bandwidth = bytes_transferred / (transfer_time * 1024 * 1024)  # MB/s
+                print(f"Bidirectional bandwidth ({data_size} elements): {bandwidth:.2f} MB/s")
                 
             elif rank == 1:
-                data = np.empty(data_size, dtype=np.float64)
-                comm.Recv(data, source=0, tag=456)
+                # Simultaneous send and receive using Sendrecv
+                comm.Sendrecv(data_send, dest=0, sendtag=457,
+                             recvbuf=data_recv, source=0, recvtag=456)
     
     comm.Barrier()
 

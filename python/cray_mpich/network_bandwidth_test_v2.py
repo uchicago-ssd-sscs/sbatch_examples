@@ -16,61 +16,53 @@ except ImportError:
     sys.exit(1)
 
 def test_network_bandwidth(comm, rank, size, data_size_mb=4096, iterations=10):
-    """Network bandwidth test with comprehensive metrics"""
+    """Bidirectional network bandwidth test with comprehensive metrics"""
     
     if size < 2:
         return
     
     if rank == 0:
-        print(f"Testing {data_size_mb}MB bandwidth with {iterations} iterations")
+        print(f"Testing bidirectional {data_size_mb}MB bandwidth with {iterations} iterations")
     
     # Use larger data sizes to reduce overhead
     data_size = int(data_size_mb * 1024 * 1024 // 8)  # float64 = 8 bytes
-    data = np.random.random(data_size).astype(np.float64)
+    send_data = np.random.random(data_size).astype(np.float64)
+    recv_data = np.empty(data_size, dtype=np.float64)
     
-    # Warm up the network
+    # Warm up the network with bidirectional transfer
     if rank == 0:
-        comm.Send(data, dest=1, tag=999)
+        comm.Sendrecv(send_data, dest=1, sendtag=999,
+                     recvbuf=recv_data, source=1, recvtag=1000)
     elif rank == 1:
-        received_data = np.empty(data_size, dtype=np.float64)
-        comm.Recv(received_data, source=0, tag=999)
+        comm.Sendrecv(send_data, dest=0, sendtag=1000,
+                     recvbuf=recv_data, source=0, recvtag=999)
     
     comm.Barrier()
     
-    # Test point-to-point communication with comprehensive timing
+    # Test bidirectional communication with comprehensive timing
     if rank == 0:
         print(f"Data size: {data_size} elements ({data_size * 8 / (1024*1024):.1f} MB)")
         
-        # Send data to rank 1
+        # Bidirectional transfer
         start_time = MPI.Wtime()  # Use MPI timing for better accuracy
         for i in range(iterations):
-            comm.Send(data, dest=1, tag=123)
+            comm.Sendrecv(send_data, dest=1, sendtag=123,
+                         recvbuf=recv_data, source=1, recvtag=124)
             if i % 5 == 0:  # Progress indicator
-                print(f"  Send progress: {i+1}/{iterations}")
-        comm.Barrier()  # Wait for all sends to complete
-        send_time = MPI.Wtime() - start_time
+                print(f"  Bidirectional progress: {i+1}/{iterations}")
+        end_time = MPI.Wtime()
         
-        # Calculate send bandwidth
-        bytes_sent = data_size * 8 * iterations
-        send_bandwidth = bytes_sent / (send_time * 1024 * 1024 * 1024)  # GB/s
-        send_bandwidth_mbps = bytes_sent / (send_time * 1024 * 1024)  # MB/s
+        # Calculate bidirectional bandwidth
+        bytes_transferred = data_size * 8 * iterations * 2  # Both directions
+        bandwidth = bytes_transferred / ((end_time - start_time) * 1024 * 1024 * 1024)  # GB/s
         
-        print(f"Send {data_size_mb}MB: {send_bandwidth:.2f} GB/s")
+        print(f"Bidirectional {data_size_mb}MB: {bandwidth:.2f} GB/s")
         
     elif rank == 1:
-        # Receive data from rank 0
-        received_data = np.empty(data_size, dtype=np.float64)
-        
-        start_time = MPI.Wtime()
+        # Participate in bidirectional transfer
         for i in range(iterations):
-            comm.Recv(received_data, source=0, tag=123)
-        recv_time = MPI.Wtime() - start_time
-        
-        # Calculate receive bandwidth
-        bytes_received = data_size * 8 * iterations
-        recv_bandwidth = bytes_received / (recv_time * 1024 * 1024 * 1024)  # GB/s
-        
-        print(f"Receive {data_size_mb}MB: {recv_bandwidth:.2f} GB/s")
+            comm.Sendrecv(send_data, dest=0, sendtag=124,
+                         recvbuf=recv_data, source=0, recvtag=123)
 
 def test_bidirectional_bandwidth(comm, rank, size, data_size_mb=2048, iterations=5):
     """Test bidirectional bandwidth with non-blocking operations"""
@@ -136,13 +128,13 @@ def test_latency(comm, rank, size, iterations=10):
             data = comm.recv(source=0, tag=789)
 
 def test_different_message_sizes(comm, rank, size):
-    """Test bandwidth with different message sizes"""
+    """Test bidirectional bandwidth with different message sizes"""
     
     if size < 2:
         return
     
     if rank == 0:
-        print("Testing different message sizes:")
+        print("Testing bidirectional bandwidth with different message sizes:")
     
     # Test different message sizes
     message_sizes = [1024, 10240, 102400]  # 1KB, 10KB, 100KB (matching OpenMPI)
@@ -151,23 +143,28 @@ def test_different_message_sizes(comm, rank, size):
         data_size = msg_size // 8  # float64 = 8 bytes
         iterations = 1  # Single iteration for quick testing
         
+        send_data = np.random.random(data_size).astype(np.float64)
+        recv_data = np.empty(data_size, dtype=np.float64)
+        
+        comm.Barrier()  # Synchronize before timing
+        
         if rank == 0:
-            data = np.random.random(data_size).astype(np.float64)
             start_time = MPI.Wtime()
             for _ in range(iterations):
-                comm.Send(data, dest=1, tag=999)
+                comm.Sendrecv(send_data, dest=1, sendtag=999,
+                             recvbuf=recv_data, source=1, recvtag=1000)
             end_time = MPI.Wtime()
             
             total_time = end_time - start_time
-            bytes_sent = data_size * 8 * iterations
-            bandwidth = bytes_sent / (total_time * 1024 * 1024)  # MB/s (matching OpenMPI)
+            bytes_transferred = data_size * 8 * iterations * 2  # Both directions
+            bandwidth = bytes_transferred / (total_time * 1024 * 1024)  # MB/s (matching OpenMPI)
             
-            print(f"Bandwidth ({msg_size} elements): {bandwidth:.2f} MB/s")
+            print(f"Bidirectional bandwidth ({msg_size} elements): {bandwidth:.2f} MB/s")
             
         elif rank == 1:
-            data = np.empty(data_size, dtype=np.float64)
             for _ in range(iterations):
-                comm.Recv(data, source=0, tag=999)
+                comm.Sendrecv(send_data, dest=0, sendtag=1000,
+                             recvbuf=recv_data, source=0, recvtag=999)
 
 def test_network_topology(comm, rank, size):
     """Test network topology and connectivity"""
